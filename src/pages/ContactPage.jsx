@@ -38,13 +38,13 @@ export default function ContactPage() {
       </div>
 
       {/* Contact info */}
-      <div className="grid grid-cols-3 gap-6 max-w-[1050px] mx-auto px-6 pb-16">
+      <div className="flex flex-wrap justify-center gap-6 max-w-[1050px] mx-auto px-6 pb-16">
         {[
           { Icon: Phone,  title: 'Phone',   lines: ['+1 800 555 0118', '+1 800 555 0199'] },
           { Icon: Mail,   title: 'Email',   lines: ['hello@bandage.com', 'support@bandage.com'] },
           { Icon: MapPin, title: 'Address', lines: ['1234 Fashion Ave', 'New York, NY 10001'] },
         ].map(({ Icon, title, lines }) => (
-          <div key={title} className="text-center py-10 px-6 border border-[#E8E8E8] rounded-[5px] bg-[#FAFAFA]">
+          <div key={title} className="flex flex-col items-center text-center py-10 px-6 border border-[#E8E8E8] rounded-[5px] bg-[#FAFAFA] flex-1 min-w-[220px]">
             <div className="w-14 h-14 rounded-full bg-[rgba(35,166,240,0.1)] flex items-center justify-center mx-auto mb-4">
               <Icon size={22} color="#23A6F0" />
             </div>
@@ -64,8 +64,8 @@ export default function ContactPage() {
             </p>
           </div>
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
+            <div className="flex flex-wrap gap-4 mb-4">
+              <div className="flex-1 min-w-[200px]">
                 <label className="block font-bold text-[13px] text-[#252B42] mb-1.5">Name *</label>
                 <input
                   value={form.name}
@@ -74,7 +74,7 @@ export default function ContactPage() {
                   className={inputCls}
                 />
               </div>
-              <div>
+              <div className="flex-1 min-w-[200px]">
                 <label className="block font-bold text-[13px] text-[#252B42] mb-1.5">Email *</label>
                 <input
                   type="email"

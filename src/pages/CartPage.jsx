@@ -41,15 +41,17 @@ export default function CartPage() {
             <div className="flex-1 min-w-[320px]">
               <div className="bg-white border border-[#E8E8E8] rounded-[5px] overflow-hidden">
                 {/* Header */}
-                <div className="grid grid-cols-[3fr_1fr_1.5fr_1fr_40px] py-[14px] px-5 bg-[#FAFAFA] border-b border-[#E8E8E8]">
-                  {['Product', 'Price', 'Quantity', 'Total', ''].map(h => (
-                    <span key={h} className="font-bold text-[12px] text-[#737373] tracking-[0.2px] uppercase">{h}</span>
-                  ))}
+                <div className="flex py-[14px] px-5 bg-[#FAFAFA] border-b border-[#E8E8E8]">
+                  <span className="flex-[3] font-bold text-[12px] text-[#737373] tracking-[0.2px] uppercase">Product</span>
+                  <span className="flex-[1] font-bold text-[12px] text-[#737373] tracking-[0.2px] uppercase">Price</span>
+                  <span className="flex-[1.5] font-bold text-[12px] text-[#737373] tracking-[0.2px] uppercase">Quantity</span>
+                  <span className="flex-[1] font-bold text-[12px] text-[#737373] tracking-[0.2px] uppercase">Total</span>
+                  <span className="w-[40px]"></span>
                 </div>
                 {/* Rows */}
                 {items.map(item => (
-                  <div key={item.id} className="grid grid-cols-[3fr_1fr_1.5fr_1fr_40px] py-4 px-5 border-b border-[#E8E8E8] items-center">
-                    <div className="flex items-center gap-3">
+                  <div key={item.id} className="flex py-4 px-5 border-b border-[#E8E8E8] items-center">
+                    <div className="flex-[3] flex items-center gap-3">
                       <Link to={`/product/${item.id}`}>
                         <img src={item.image} alt={item.name} className="w-[60px] h-[72px] object-cover rounded" />
                       </Link>
@@ -58,8 +60,8 @@ export default function CartPage() {
                         <p className="font-semibold text-[12px] text-[#737373]">{item.department}</p>
                       </div>
                     </div>
-                    <span className="font-bold text-[14px] text-[#252B42]">${item.price.toFixed(2)}</span>
-                    <div className="flex border border-[#E8E8E8] rounded w-[100px] overflow-hidden">
+                    <span className="flex-[1] font-bold text-[14px] text-[#252B42]">${item.price.toFixed(2)}</span>
+                    <div className="flex-[1.5] flex border border-[#E8E8E8] rounded w-[100px] overflow-hidden">
                       <button onClick={() => update(item.id, item.qty - 1)} className="w-8 h-9 border-none bg-white cursor-pointer flex items-center justify-center">
                         <Minus size={12} color="#737373" />
                       </button>
@@ -68,8 +70,8 @@ export default function CartPage() {
                         <Plus size={12} color="#737373" />
                       </button>
                     </div>
-                    <span className="font-bold text-[14px] text-[#23856D]">${(item.price * item.qty).toFixed(2)}</span>
-                    <button onClick={() => remove(item.id, item.name)} className="bg-transparent border-none cursor-pointer flex items-center justify-center">
+                    <span className="flex-[1] font-bold text-[14px] text-[#23856D]">${(item.price * item.qty).toFixed(2)}</span>
+                    <button onClick={() => remove(item.id, item.name)} className="w-[40px] bg-transparent border-none cursor-pointer flex items-center justify-center">
                       <Trash2 size={16} color="#BDBDBD" />
                     </button>
                   </div>

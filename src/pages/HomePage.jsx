@@ -1,94 +1,90 @@
 import { Link, useHistory } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
 import { TrendingUp, Heart, ShoppingCart, Eye, Star, Tag, Calendar, BarChart2, ArrowRight, BookOpen, BookMarked } from 'lucide-react'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Autoplay, Pagination, Navigation } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
+import 'swiper/css/navigation'
 import ProductCard from '../components/ProductCard'
 import { products, featuredPosts } from '../data/mockData'
 
-// ── Hero ─────────────────────────────────────────────────────────────────────
+// ── Hero Slider ───────────────────────────────────────────────────────────────
+const heroSlides = [
+  {
+    season: 'SUMMER 2024',
+    title: 'NEW COLLECTION',
+    desc: 'We know how much it matters in what you wear, and how important these details can be.',
+    img: '/hero-model.png',
+    bg: 'bg-[linear-gradient(90deg,#96E9FB_0%,#ABECD6_100%)]',
+  },
+  {
+    season: 'FALL 2024',
+    title: 'AUTUMN STYLES',
+    desc: 'Discover our curated selection of warm tones and cozy textures for the season ahead.',
+    img: '/hero-model.png',
+    bg: 'bg-[linear-gradient(90deg,#F9D4A0_0%,#F6A96B_100%)]',
+  },
+  {
+    season: 'WINTER 2024',
+    title: 'COLD SEASON FITS',
+    desc: 'Stay warm and stylish with our latest winter collection, designed for every occasion.',
+    img: '/hero-model.png',
+    bg: 'bg-[linear-gradient(90deg,#C3CFE2_0%,#B8D4F0_100%)]',
+  },
+]
+
 function Hero() {
   return (
     <section className="w-full bg-[#FAFAFA] p-3 md:p-6">
-      <div
-        className="w-full max-w-[1292px] mx-auto rounded-[20px] overflow-hidden relative
-           flex flex-col items-center md:flex-row md:items-center md:h-[500px] min-h-[904px] md:min-h-0"
-        style={{ background: 'linear-gradient(90deg, #96E9FB 0%, #ABECD6 100%)' }}
+      <Swiper
+        modules={[Autoplay, Pagination, Navigation]}
+        autoplay={{ delay: 4000, disableOnInteraction: false }}
+        pagination={{ clickable: true }}
+        navigation
+        loop
+        className="w-full max-w-[1292px] mx-auto rounded-[20px] overflow-hidden"
       >
-        {/* Decorative circles */}
-        <div className="absolute right-[8%] top-[5%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full bg-white/40 pointer-events-none" />
-        <div className="absolute left-[38%] top-[8%] w-12 h-12 md:w-20 md:h-20 rounded-full bg-white/50 pointer-events-none" />
-        <div className="absolute right-[4%] top-[27%] w-[10px] h-[10px] md:w-[15px] md:h-[15px] rounded-full bg-[#977DF4] pointer-events-none" />
-        <div className="absolute left-[13%] bottom-[20%] w-[10px] h-[10px] md:w-[15px] md:h-[15px] rounded-full bg-[#977DF4] pointer-events-none" />
-
-        {/* Mobile: centered column. Desktop: left half */}
-        <div className="relative z-[2] flex flex-col items-center md:items-start gap-6 md:gap-[30px]
-                pt-20 pb-8 px-6 md:py-[60px] md:pl-[clamp(32px,8%,206px)]
-                w-full md:w-1/2 md:flex-shrink-0 text-center md:text-left">
-          <span className="font-bold text-sm md:text-base text-[#2A7CC7]">SUMMER 2024</span>
-          <h1 className="font-bold text-[40px] leading-[50px] md:text-[clamp(28px,4.5vw,58px)] md:leading-[1.38] text-[#252B42] m-0">NEW COLLECTION</h1>
-          <p className="text-xl md:text-[clamp(13px,1.5vw,20px)] leading-[30px] text-[#737373] m-0 max-w-[291px] md:max-w-[376px]">
-            We know how much it matters in what you wear, and how important these details can be.
-          </p>
-          <Link to="/shop" className="inline-flex items-center justify-center bg-[#23A6F0] rounded-[5px] py-[15px] px-[40px] font-bold text-2xl md:text-[clamp(16px,2vw,24px)] text-white no-underline hover:bg-[#1a8fd1] transition-colors">
-            Shop Now
-          </Link>
-        </div>
-
-        {/* Mobile: image below text. Desktop: right half absolute */}
-        <div className="relative z-[1] w-full md:flex-1 md:self-stretch md:min-w-0">
-          {/* Mobile image — centered, below text */}
-          <img src="/hero-model.png" alt="New Collection"
-  className="block md:hidden w-[410px] h-[433px] object-cover object-top mx-auto mt-auto" />
-          {/* Desktop image — absolute fill */}
-          <img src="/hero-model.png" alt="New Collection"
-            className="hidden md:block absolute bottom-0 right-0 h-full w-auto object-cover" />
-        </div>
-      </div>
+        {heroSlides.map((slide, idx) => (
+          <SwiperSlide key={idx}>
+            <div className={`w-full ${slide.bg} relative flex flex-col items-center md:flex-row md:items-center md:h-[500px] min-h-[904px] md:min-h-0`}>
+              <div className="absolute right-[8%] top-[5%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] rounded-full bg-white/40 pointer-events-none" />
+              <div className="absolute left-[38%] top-[8%] w-12 h-12 md:w-20 md:h-20 rounded-full bg-white/50 pointer-events-none" />
+              <div className="absolute right-[4%] top-[27%] w-[10px] h-[10px] md:w-[15px] md:h-[15px] rounded-full bg-[#977DF4] pointer-events-none" />
+              <div className="absolute left-[13%] bottom-[20%] w-[10px] h-[10px] md:w-[15px] md:h-[15px] rounded-full bg-[#977DF4] pointer-events-none" />
+              <div className="relative z-[2] flex flex-col items-center md:items-start gap-6 md:gap-[30px] pt-20 pb-8 px-6 md:py-[60px] md:pl-[clamp(32px,8%,206px)] w-full md:w-1/2 md:flex-shrink-0 text-center md:text-left">
+                <span className="font-bold text-sm md:text-base text-[#2A7CC7]">{slide.season}</span>
+                <h1 className="font-bold text-[40px] leading-[50px] md:text-[clamp(28px,4.5vw,58px)] md:leading-[1.38] text-[#252B42] m-0">{slide.title}</h1>
+                <p className="text-xl md:text-[clamp(13px,1.5vw,20px)] leading-[30px] text-[#737373] m-0 max-w-[291px] md:max-w-[376px]">{slide.desc}</p>
+                <Link to="/shop" className="inline-flex items-center justify-center bg-[#23A6F0] rounded-[5px] py-[15px] px-[40px] font-bold text-2xl md:text-[clamp(16px,2vw,24px)] text-white no-underline hover:bg-[#1a8fd1] transition-colors">
+                  Shop Now
+                </Link>
+              </div>
+              <div className="relative z-[1] w-full md:flex-1 md:self-stretch md:min-w-0">
+                <img src={slide.img} alt={slide.title} className="block md:hidden w-[410px] h-[433px] object-cover object-top mx-auto mt-auto" />
+                <img src={slide.img} alt={slide.title} className="hidden md:block absolute bottom-0 right-0 h-full w-auto object-cover" />
+              </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
     </section>
   )
 }
 
 // ── Brand Logos ───────────────────────────────────────────────────────────────
-// Mobile: single column, one logo per row (from Figma spec)
-// Desktop: single row
 function BrandLogos() {
   const brands = [
-  { label: 'Hooli', node: (
-    <svg viewBox="0 0 100 30" width="100" height="30">
-      <text x="0" y="24" fontFamily="Georgia, serif" fontStyle="italic" fontWeight="700" fontSize="26" fill="currentColor">hooli</text>
-    </svg>
-  )},
-  { label: 'Lyft', node: (
-    <svg viewBox="0 0 60 30" width="60" height="30">
-      <text x="0" y="24" fontFamily="Montserrat, sans-serif" fontWeight="700" fontSize="24" fill="currentColor">lyft</text>
-    </svg>
-  )},
-  { label: 'Dentalcare', node: (
-    <svg viewBox="0 0 140 30" width="140" height="30">
-      <text x="0" y="22" fontFamily="Montserrat, sans-serif" fontWeight="600" fontSize="18" fill="currentColor">dentalcare</text>
-    </svg>
-  )},
-  { label: 'Stripe', node: (
-    <svg viewBox="0 0 60 30" width="100" height="30">
-      <text x="0" y="24" fontFamily="Montserrat, sans-serif" fontWeight="800" fontSize="26" fill="currentColor">stripe</text>
-    </svg>
-  )},
-  { label: 'AWS', node: (
-    <svg viewBox="0 0 60 30" width="60" height="30">
-      <text x="0" y="22" fontFamily="Montserrat, sans-serif" fontWeight="800" fontSize="20" letterSpacing="2" fill="currentColor">aws</text>
-    </svg>
-  )},
-  { label: 'Reddit', node: (
-    <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
-      <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
-    </svg>
-  )},
-]
+    { label: 'Hooli', node: (<svg viewBox="0 0 100 30" width="100" height="30"><text x="0" y="24" fontFamily="Georgia, serif" fontStyle="italic" fontWeight="700" fontSize="26" fill="currentColor">hooli</text></svg>) },
+    { label: 'Lyft', node: (<svg viewBox="0 0 60 30" width="60" height="30"><text x="0" y="24" fontFamily="Montserrat, sans-serif" fontWeight="700" fontSize="24" fill="currentColor">lyft</text></svg>) },
+    { label: 'Dentalcare', node: (<svg viewBox="0 0 140 30" width="140" height="30"><text x="0" y="22" fontFamily="Montserrat, sans-serif" fontWeight="600" fontSize="18" fill="currentColor">dentalcare</text></svg>) },
+    { label: 'Stripe', node: (<svg viewBox="0 0 60 30" width="100" height="30"><text x="0" y="24" fontFamily="Montserrat, sans-serif" fontWeight="800" fontSize="26" fill="currentColor">stripe</text></svg>) },
+    { label: 'AWS', node: (<svg viewBox="0 0 60 30" width="60" height="30"><text x="0" y="22" fontFamily="Montserrat, sans-serif" fontWeight="800" fontSize="20" letterSpacing="2" fill="currentColor">aws</text></svg>) },
+    { label: 'Reddit', node: (<svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor"><path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/></svg>) },
+  ]
   return (
     <section className="w-full bg-white border-t border-b border-[#F0F0F0]">
-      {/* Mobile: single column, centered. Desktop: single row */}
-      <div className="max-w-[1050px] mx-auto px-6
-                      flex flex-col items-center gap-[60px] py-[50px]
-                      md:flex-row md:justify-between md:py-0 md:h-[175px]">
+      <div className="max-w-[1050px] mx-auto px-6 flex flex-col items-center gap-[60px] py-[50px] md:flex-row md:justify-between md:py-0 md:h-[175px]">
         {brands.map(({ label, node }) => (
           <div key={label} title={label} className="flex items-center justify-center text-[#737373] opacity-60 hover:opacity-90 transition-opacity cursor-pointer">
             {node}
@@ -100,9 +96,6 @@ function BrandLogos() {
 }
 
 // ── Featured Banners ──────────────────────────────────────────────────────────
-// Mobile: 3 stacked full-width cards (from Figma mobile-shop-cards-23)
-// Desktop: left big + right two stacked
-const OVL = 'rgba(45,139,192,0.75)'
 function ExploreBtn({ to }) {
   return (
     <Link to={to} className="inline-flex items-center justify-center w-[198px] h-[52px] border border-white rounded-[5px] font-bold text-sm text-white no-underline bg-transparent hover:bg-white hover:text-[#252B42] transition-colors">
@@ -113,28 +106,23 @@ function ExploreBtn({ to }) {
 
 function FeaturedBanners() {
   const imgs = ['812e38457d0cc7c0071c4e5eb3752a437fda3d0d.png','458786e9d5e9865170a32e0687f0a17d8581b9c8.png','81b40a6bad298edf330ec5747ae93edc6118ce4a.png']
-  const titles = ['Top Product Of The Week', 'Top Product Of The Week', 'Top Product Of The Week']
-
   return (
     <section className="w-full bg-white">
-      {/* ── Mobile layout: 3 stacked cards ── */}
       <div className="md:hidden flex flex-col items-center gap-[15px] px-[calc((100%-345px)/2)] py-6">
         {imgs.map((img, i) => (
-          <div key={i} className="relative w-[345px] overflow-hidden rounded-sm" style={{ height: i === 0 ? 556 : 398 }}>
+          <div key={i} className={`relative w-[345px] overflow-hidden rounded-sm ${i === 0 ? 'h-[556px]' : 'h-[398px]'}`}>
             <img src={img} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute left-0 right-0 bottom-0 h-[238px] flex flex-col justify-center gap-4 px-[41px]" style={{ background: OVL }}>
-              <h3 className="font-bold text-2xl text-white m-0 leading-8">{titles[i]}</h3>
+            <div className="absolute left-0 right-0 bottom-0 h-[238px] flex flex-col justify-center gap-4 px-[41px] bg-[rgba(45,139,192,0.75)]">
+              <h3 className="font-bold text-2xl text-white m-0 leading-8">Top Product Of The Week</h3>
               <ExploreBtn to="/shop" />
             </div>
           </div>
         ))}
       </div>
-
-      {/* ── Desktop layout: left big + right two stacked ── */}
       <div className="hidden md:flex max-w-[1185px] mx-auto px-6 py-20 gap-4">
         <div className="flex-[0_0_52%] h-[572px] relative overflow-hidden">
           <img src={imgs[0]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute left-0 right-[30%] bottom-0 h-[238px] flex flex-col justify-center gap-4 px-[10%]" style={{ background: OVL }}>
+          <div className="absolute left-0 right-[30%] bottom-0 h-[238px] flex flex-col justify-center gap-4 px-[10%] bg-[rgba(45,139,192,0.75)]">
             <h3 className="font-bold text-2xl text-white m-0">Top Product Of<br />The Week</h3>
             <ExploreBtn to="/shop" />
           </div>
@@ -142,14 +130,14 @@ function FeaturedBanners() {
         <div className="flex-[0_0_47%] h-[572px] relative">
           <div className="absolute left-0 right-0 top-0 h-[289px] overflow-hidden">
             <img src={imgs[1]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute left-0 bottom-0 w-[65%] h-[173px] flex flex-col justify-center gap-3 px-[8%]" style={{ background: OVL }}>
+            <div className="absolute left-0 bottom-0 w-[65%] h-[173px] flex flex-col justify-center gap-3 px-[8%] bg-[rgba(45,139,192,0.75)]">
               <h4 className="font-normal text-xl text-white m-0">Top Product Of The Week</h4>
               <ExploreBtn to="/shop" />
             </div>
           </div>
           <div className="absolute left-0 right-0 top-[311px] h-[261px] overflow-hidden">
             <img src={imgs[2]} alt="" className="absolute inset-0 w-full h-full object-cover" />
-            <div className="absolute left-0 right-[35%] bottom-0 h-[153px] flex flex-col justify-center gap-3 px-[8%]" style={{ background: OVL }}>
+            <div className="absolute left-0 right-[35%] bottom-0 h-[153px] flex flex-col justify-center gap-3 px-[8%] bg-[rgba(45,139,192,0.75)]">
               <h4 className="font-normal text-xl text-white m-0">Top Product Of The Week</h4>
               <ExploreBtn to="/shop" />
             </div>
@@ -161,7 +149,6 @@ function FeaturedBanners() {
 }
 
 // ── Bestsellers ───────────────────────────────────────────────────────────────
-// Mobile: 1 column full-width cards (295px wide, 360px image)
 function Bestsellers() {
   return (
     <section className="w-full bg-white">
@@ -170,8 +157,8 @@ function Bestsellers() {
           <h3 className="font-bold text-2xl text-[#252B42] m-0">BESTSELLER PRODUCTS</h3>
           <p className="text-sm text-[#737373] max-w-[261px] mx-auto mt-2">Problems trying to resolve the conflict between the two major realms of Classical physics.</p>
         </div>
-        {/* Mobile: single column. Desktop: multi-column */}
-<div className="flex flex-col md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 items-center gap-[30px] w-full">          {products.map(p => <ProductCard key={p.id} product={p} />)}
+        <div className="flex flex-wrap justify-center gap-[30px] w-full">
+          {products.map(p => <ProductCard key={p.id} product={p} />)}
         </div>
         <Link to="/shop" className="inline-flex items-center justify-center w-64 h-[52px] border border-[#23A6F0] rounded-[5px] font-bold text-sm text-[#23A6F0] no-underline hover:bg-[#23A6F0] hover:text-white transition-colors">
           LOAD MORE PRODUCTS
@@ -182,29 +169,25 @@ function Bestsellers() {
 }
 
 // ── About Split ───────────────────────────────────────────────────────────────
-// Mobile: text first (left-aligned), then two images side by side below
 function AboutSplit() {
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1050px] mx-auto px-6 py-20 flex flex-col md:flex-row gap-10 md:gap-16 items-center">
-        {/* Text — always first on mobile */}
         <div className="flex flex-col gap-4 flex-1 min-w-[280px] max-w-[447px]">
-  <h5 className="font-bold text-base text-[#23A6F0] m-0">Featured Products</h5>
+          <h5 className="font-bold text-base text-[#23A6F0] m-0">Featured Products</h5>
           <h2 className="font-bold text-[40px] leading-[50px] text-[#252B42] m-0">We love what we do</h2>
           <p className="text-sm text-[#737373] leading-5 m-0">Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics and electromagnetism resulted in the development of quantum mechanics. Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics.</p>
         </div>
-        {/* Images — side by side both on mobile and desktop */}
         <div className="flex gap-[8px] w-full md:flex-1 md:min-w-[280px] md:max-w-[513px] h-[363px] md:h-[498px] overflow-hidden">
-  <img src="7e902282946c71109661dfcd96fe9458abbd0e5b.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
-  <img src="ca3428bbb53263f3cb265f6e0a1129f5afc25e74.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
-</div>
+          <img src="7e902282946c71109661dfcd96fe9458abbd0e5b.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
+          <img src="ca3428bbb53263f3cb265f6e0a1129f5afc25e74.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
+        </div>
       </div>
     </section>
   )
 }
 
 // ── Services ──────────────────────────────────────────────────────────────────
-// Mobile: single column stacked cards (from Figma mobile-features-12)
 function Services() {
   const features = [
     { Icon: BookOpen,   title: 'Easy Wins',   desc: 'Get your best looking smile now!' },
@@ -219,7 +202,6 @@ function Services() {
           <h3 className="font-bold text-2xl text-[#252B42] m-0 mt-2">THE BEST SERVICES</h3>
           <p className="text-sm text-[#737373] max-w-[196px] mx-auto mt-2">Problems trying to resolve the conflict between the two major realms of Classical physics.</p>
         </div>
-        {/* Mobile: single column gap-[30px]. Desktop: flex row */}
         <div className="flex flex-col md:flex-row flex-wrap justify-center gap-[30px] w-full">
           {features.map(({ Icon, title, desc }) => (
             <div key={title} className="flex flex-col items-center py-[35px] px-[40px] gap-5 w-full md:w-[315px]">
@@ -235,45 +217,29 @@ function Services() {
 }
 
 // ── Featured Posts ────────────────────────────────────────────────────────────
-// Mobile: vertical cards (image on top, content below) — from Figma mobile-blog-2
-// Desktop: side by side horizontal cards
 function VerticalCard({ product }) {
   const history = useHistory()
-  const dispatch = useDispatch()
-
   return (
-    <div
-      onClick={() => history.push(`/product/${product.id}`)}
-      className="flex flex-col w-full max-w-[330px] bg-white overflow-hidden cursor-pointer shadow-[0px_2px_4px_rgba(0,0,0,0.1)] hover:shadow-xl transition-shadow"
-    >
-      {/* Image */}
+    <div onClick={() => history.push(`/product/${product.id}`)} className="flex flex-col w-full max-w-[330px] bg-white overflow-hidden cursor-pointer shadow-[0px_2px_4px_rgba(0,0,0,0.1)] hover:shadow-xl transition-shadow">
       <div className="w-full h-[300px] relative overflow-hidden flex-shrink-0">
-<img src={product.mobileImage || product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />        <div className="absolute top-5 left-5 flex items-center px-2.5 h-6 bg-[#E74040] rounded-[3px] shadow-[0px_2px_4px_rgba(0,0,0,0.1)]">
+        <img src={product.mobileImage || product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute top-5 left-5 flex items-center px-2.5 h-6 bg-[#E74040] rounded-[3px] shadow-[0px_2px_4px_rgba(0,0,0,0.1)]">
           <span className="font-bold text-sm text-white">NEW</span>
         </div>
       </div>
-      {/* Content */}
       <div className="flex flex-col p-[25px] gap-2.5">
         <div className="flex gap-[15px] text-xs">
           <span className="text-[#8EC2F2]">Google</span>
           <span className="text-[#737373]">Trending</span>
           <span className="text-[#737373]">New</span>
         </div>
-<h4 className="font-normal text-xl text-[#252B42] m-0 leading-[30px]">{product.title || product.name}</h4>        <p className="text-sm text-[#737373] m-0 leading-5">{product.description}</p>
+        <h4 className="font-normal text-xl text-[#252B42] m-0 leading-[30px]">{product.title || product.name}</h4>
+        <p className="text-sm text-[#737373] m-0 leading-5">{product.description}</p>
         <div className="flex justify-between items-center py-[15px]">
-          <div className="flex items-center gap-1">
-            <Calendar size={16} color="#23A6F0" />
-            <span className="text-xs text-[#737373]">Jan 14</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <BarChart2 size={16} color="#23856D" />
-            <span className="text-xs text-[#737373]">64 Lessons</span>
-          </div>
+          <div className="flex items-center gap-1"><Calendar size={16} color="#23A6F0" /><span className="text-xs text-[#737373]">Jan 14</span></div>
+          <div className="flex items-center gap-1"><BarChart2 size={16} color="#23856D" /><span className="text-xs text-[#737373]">64 Lessons</span></div>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); history.push(`/product/${product.id}`) }}
-          className="flex items-center gap-2 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer p-0 w-fit"
-        >
+        <button onClick={e => { e.stopPropagation(); history.push(`/product/${product.id}`) }} className="flex items-center gap-2 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer p-0 w-fit">
           Learn More <ArrowRight size={9} color="#23A6F0" />
         </button>
       </div>
@@ -286,8 +252,7 @@ function HorizCard({ product }) {
   const history = useHistory()
   const isWishlisted = useSelector(s => s.wishlist.items.some(i => i.id === product.id))
   return (
-    <div onClick={() => history.push(`/product/${product.id}`)}
-      className="flex w-full max-w-[501px] bg-white overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300">
+    <div onClick={() => history.push(`/product/${product.id}`)} className="flex w-full max-w-[501px] bg-white overflow-hidden cursor-pointer hover:shadow-xl transition-shadow duration-300">
       <div className="w-[209px] h-[404px] relative flex-shrink-0 overflow-hidden">
         <img src={product.image} alt={product.name} className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute top-5 left-5 flex items-center px-2.5 h-6 bg-[#E74040] rounded-[3px]">
@@ -299,8 +264,7 @@ function HorizCard({ product }) {
             { fn: () => dispatch({ type:'ADD_TO_CART', payload:product }),     node: <ShoppingCart size={16} color="#252B42" /> },
             { fn: () => history.push(`/product/${product.id}`),                node: <Eye size={16} color="#000" /> },
           ].map(({ fn, node }, i) => (
-            <button key={i} onClick={e => { e.stopPropagation(); fn() }}
-              className="w-10 h-10 rounded-full bg-white border-none cursor-pointer flex items-center justify-center hover:bg-[#eef7ff] transition-colors shadow-md">
+            <button key={i} onClick={e => { e.stopPropagation(); fn() }} className="w-10 h-10 rounded-full bg-white border-none cursor-pointer flex items-center justify-center hover:bg-[#eef7ff] transition-colors shadow-md">
               {node}
             </button>
           ))}
@@ -315,7 +279,7 @@ function HorizCard({ product }) {
           </div>
         </div>
         <h5 className="font-bold text-base text-[#252B42] m-0 truncate">{product.name}</h5>
-        <p className="text-sm text-[#737373] m-0 leading-5 overflow-hidden" style={{display:'-webkit-box',WebkitLineClamp:3,WebkitBoxOrient:'vertical'}}>{product.description}</p>
+        <p className="text-sm text-[#737373] m-0 leading-5 line-clamp-3">{product.description}</p>
         <div className="flex items-center gap-2.5"><Tag size={16} color="#737373" /><span className="font-bold text-sm text-[#737373]">{product.sales}</span></div>
         <div className="flex items-center gap-1.5">
           <span className="font-bold text-base text-[#BDBDBD] line-through">${product.oldPrice.toFixed(2)}</span>
@@ -330,8 +294,7 @@ function HorizCard({ product }) {
             </div>
           ))}
         </div>
-        <button onClick={e => { e.stopPropagation(); history.push(`/product/${product.id}`) }}
-          className="flex items-center gap-2 px-5 py-2.5 border border-[#23A6F0] rounded-[37px] bg-transparent cursor-pointer w-fit group hover:bg-[#23A6F0] transition-colors">
+        <button onClick={e => { e.stopPropagation(); history.push(`/product/${product.id}`) }} className="flex items-center gap-2 px-5 py-2.5 border border-[#23A6F0] rounded-[37px] bg-transparent cursor-pointer w-fit group hover:bg-[#23A6F0] transition-colors">
           <span className="font-bold text-sm text-[#23A6F0] group-hover:text-white transition-colors">Learn More</span>
           <ArrowRight size={9} className="text-[#23A6F0] group-hover:text-white transition-colors" />
         </button>
@@ -348,7 +311,6 @@ function FeaturedPosts() {
           <h6 className="font-bold text-sm text-[#23A6F0] m-0">Practice Advice</h6>
           <h2 className="font-bold text-[40px] leading-[50px] text-[#252B42] m-0">Featured Posts</h2>
         </div>
-        {/* Mobile: vertical cards stacked. Desktop: horizontal cards side by side */}
         <div className="md:hidden flex flex-col items-center gap-[30px] w-full">
           {featuredPosts.map(p => <VerticalCard key={p.id} product={p} />)}
         </div>

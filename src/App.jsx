@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import store from './store'
 import Header from './layout/Header'
 import Footer from './layout/Footer'
+import PageContent from './layout/PageContent'
 import HomePage from './pages/HomePage'
 import ShopPage from './pages/ShopPage'
 import ProductDetailPage from './pages/ProductDetailPage'
@@ -19,7 +20,7 @@ export default function App() {
       <Router>
         <div className="w-full font-['Montserrat']">
           <Header />
-          <main className="w-full">
+          <PageContent>
             <Switch>
               <Route exact path="/" component={HomePage} />
               <Route path="/shop" component={ShopPage} />
@@ -29,7 +30,7 @@ export default function App() {
               <Route path="/about" component={AboutPage} />
               <Route path="/contact" component={ContactPage} />
             </Switch>
-          </main>
+          </PageContent>
           <Footer />
         </div>
         <ToastContainer position="bottom-right" theme="colored" />

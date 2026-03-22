@@ -165,9 +165,13 @@ export default function ProductDetailPage() {
 
             {/* Meta */}
             <div className="border-t border-[#E8E8E8] pt-4 flex flex-col gap-1.5">
-              {[['Availability', 'In Stock', '#23856D'], ['Category', product.category, '#252B42'], ['Department', product.department, '#252B42']].map(([k, v, c]) => (
+              {[
+                ['Availability', 'In Stock',          'text-[#23856D]'],
+                ['Category',     product.category,    'text-[#252B42]'],
+                ['Department',   product.department,  'text-[#252B42]'],
+              ].map(([k, v, cls]) => (
                 <p key={k} className="font-bold text-[14px] text-[#737373] m-0">
-                  {k}: <span style={{ color: c }}>{v}</span>
+                  {k}: <span className={cls}>{v}</span>
                 </p>
               ))}
             </div>
@@ -200,7 +204,7 @@ export default function ProductDetailPage() {
         {related.length > 0 && (
           <div>
             <h2 className="font-bold text-[24px] text-[#252B42] mb-6">Related Products</h2>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(183px,1fr))] gap-[30px]">
+            <div className="flex flex-wrap gap-[30px] justify-center">
               {related.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           </div>

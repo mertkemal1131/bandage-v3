@@ -136,7 +136,7 @@ export default function ShopPage() {
               </button>
             </div>
           ) : view === 'grid' ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(183px,1fr))] gap-[30px]">
+            <div className="flex flex-wrap gap-[30px] justify-center">
               {filtered.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           ) : (
