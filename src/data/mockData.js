@@ -22,7 +22,7 @@ export const products = imgs.map((image, i) => ({
   oldPrice: 16.48,
   rating: 5,
   reviews: 10,
-  colors: ['#23A6F0', '#23856D', '#E2462C'],
+  colors: ['#23A6F0', '#23856D', '#E77C40', '#252B42'],
   sizes: ['XS', 'S', 'M', 'L', 'XL'],
   image,
   description: 'We focus on ergonomics and meeting you where you work. It\'s only a keystroke away.',

@@ -158,7 +158,15 @@ function Bestsellers() {
           <p className="text-sm text-[#737373] max-w-[261px] mx-auto mt-2">Problems trying to resolve the conflict between the two major realms of Classical physics.</p>
         </div>
         <div className="flex flex-wrap justify-center gap-[30px] w-full">
-          {products.map(p => <ProductCard key={p.id} product={p} />)}
+          {products.slice(0, 8).map(p => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              cardWidth="w-[295px] md:w-[239px]"
+              imageHeight="h-[360px] md:h-[238px]"
+              objectFit="object-contain"
+            />
+          ))}
         </div>
         <Link to="/shop" className="inline-flex items-center justify-center w-64 h-[52px] border border-[#23A6F0] rounded-[5px] font-bold text-sm text-[#23A6F0] no-underline hover:bg-[#23A6F0] hover:text-white transition-colors">
           LOAD MORE PRODUCTS
@@ -173,14 +181,16 @@ function AboutSplit() {
   return (
     <section className="w-full bg-white">
       <div className="max-w-[1050px] mx-auto px-6 py-20 flex flex-col md:flex-row gap-10 md:gap-16 items-center">
-        <div className="flex flex-col gap-4 flex-1 min-w-[280px] max-w-[447px]">
+        {/* Images — LEFT */}
+        <div className="flex gap-[8px] w-full md:flex-1 md:min-w-[280px] md:max-w-[513px] h-[363px] md:h-[498px] overflow-hidden order-1 md:order-1">
+          <img src="7e902282946c71109661dfcd96fe9458abbd0e5b.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
+          <img src="ca3428bbb53263f3cb265f6e0a1129f5afc25e74.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
+        </div>
+        {/* Text — RIGHT */}
+        <div className="flex flex-col gap-4 flex-1 min-w-[280px] max-w-[447px] order-2 md:order-2">
           <h5 className="font-bold text-base text-[#23A6F0] m-0">Featured Products</h5>
           <h2 className="font-bold text-[40px] leading-[50px] text-[#252B42] m-0">We love what we do</h2>
           <p className="text-sm text-[#737373] leading-5 m-0">Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics and electromagnetism resulted in the development of quantum mechanics. Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics.</p>
-        </div>
-        <div className="flex gap-[8px] w-full md:flex-1 md:min-w-[280px] md:max-w-[513px] h-[363px] md:h-[498px] overflow-hidden">
-          <img src="7e902282946c71109661dfcd96fe9458abbd0e5b.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
-          <img src="ca3428bbb53263f3cb265f6e0a1129f5afc25e74.jpg" alt="" className="flex-1 h-full object-cover min-w-0" />
         </div>
       </div>
     </section>
