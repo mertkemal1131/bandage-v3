@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { ChevronDown, LayoutGrid, List } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
+import BrandLogos from '../components/BrandLogos';
 import { products } from '../data/mockData';
 
 // ── Category banners ─────────────────────────────────────────────────────────
@@ -15,55 +16,6 @@ const SHOP_CATEGORIES = [
   { label: 'CLOTHES', count: 5, image: 'ca3428bbb53263f3cb265f6e0a1129f5afc25e74.jpg' },
 ];
 
-// ── Brand logos (SVG, color #737373 per Figma) ────────────────────────────────
-const BRANDS = [
-  // hooli
-  { name: 'hooli', el: (
-    <svg viewBox="0 0 103 34" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[34px]">
-      <text x="0" y="28" fontFamily="Georgia,serif" fontSize="32" fontWeight="700" fill="#737373" letterSpacing="-1">hooli</text>
-    </svg>
-  )},
-  // lyft
-  { name: 'lyft', el: (
-    <svg viewBox="0 0 83 59" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[42px]">
-      <text x="0" y="44" fontFamily="Arial,sans-serif" fontSize="40" fontWeight="800" fill="#737373">Lyft</text>
-    </svg>
-  )},
-  // leaf/stripe-like brand
-  { name: 'leaf', el: (
-    <svg viewBox="0 0 102 75" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[48px]">
-      <path d="M15 60 C15 60 25 10 75 8 C75 8 45 28 40 60" fill="#737373"/>
-      <path d="M40 60 L15 60" stroke="#737373" strokeWidth="5" strokeLinecap="round"/>
-    </svg>
-  )},
-  // stripe
-  { name: 'stripe', el: (
-    <svg viewBox="0 0 103 42" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[32px]">
-      <text x="0" y="32" fontFamily="Arial,sans-serif" fontSize="30" fontWeight="600" fill="#737373">stripe</text>
-    </svg>
-  )},
-  // aws
-  { name: 'aws', el: (
-    <svg viewBox="0 0 104 62" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[42px]">
-      <text x="0" y="34" fontFamily="Arial,sans-serif" fontSize="32" fontWeight="700" fill="#737373">aws</text>
-      <path d="M5 46 Q52 58 99 46" stroke="#737373" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-    </svg>
-  )},
-  // reddit alien
-  { name: 'reddit', el: (
-    <svg viewBox="0 0 76 72" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-[48px]">
-      <circle cx="38" cy="38" r="36" fill="#737373"/>
-      <circle cx="38" cy="35" r="14" fill="white"/>
-      <circle cx="30" cy="33" r="2.5" fill="#737373"/>
-      <circle cx="46" cy="33" r="2.5" fill="#737373"/>
-      <path d="M28 40 Q38 48 48 40" stroke="#737373" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
-      <circle cx="56" cy="18" r="5" fill="white"/>
-      <line x1="38" y1="14" x2="54" y2="18" stroke="white" strokeWidth="2.5"/>
-      <ellipse cx="17" cy="35" rx="4" ry="3" fill="white"/>
-      <ellipse cx="59" cy="35" rx="4" ry="3" fill="white"/>
-    </svg>
-  )},
-];
 
 const ITEMS_PER_PAGE = 12;
 
@@ -308,20 +260,7 @@ export default function ShopPage() {
       </div>
 
       {/* ── 6. Brand logos ──────────────────────────────────────────────── */}
-      {/* Figma desktop: bg #FAFAFA, 175px, 1050px container, row, gap 30, py 50 */}
-      {/* Figma mobile:  bg #FAFAFA, column, gap 60px, py 50px                   */}
-      <div className="w-full bg-[#FAFAFA]">
-        <div className="max-w-[1050px] mx-auto px-6 py-[50px]">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-[60px] md:gap-[30px]">
-            {BRANDS.map(brand => (
-              <div key={brand.name}
-                className="flex items-center justify-center hover:opacity-80 transition-opacity cursor-pointer">
-                {brand.el}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <BrandLogos />
 
     </div>
   );
