@@ -22,7 +22,7 @@ export default function ProductCard({ product, cardWidth = 'w-full', imageHeight
       {/* Image */}
       <div className={`w-full ${imageHeight} overflow-hidden relative flex-shrink-0`}>
         <img
-          src={product.image}
+          src={`/${product.image}`}
           alt={product.name}
           className={`w-full h-full ${objectFit} group-hover:scale-105 transition-transform duration-500`}
         />
