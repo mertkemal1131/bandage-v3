@@ -168,14 +168,6 @@ export default function ProductDetailPage() {
                 {product.name}
               </h1>
 
-              {/* Frame 31 — stars + "10 Reviews" */}
-              <div className="flex items-center gap-[10px] mb-[11px]">
-                <Stars rating={product.rating} size={22} />
-                <span className="font-bold text-[14px] leading-[24px] tracking-[0.2px] text-[#737373]">
-                  {product.reviews} Reviews
-                </span>
-              </div>
-
               {/* h5 — price, bold 24px */}
               <div className="mb-[11px]">
                 <span className="font-bold text-[24px] leading-[32px] tracking-[0.1px] text-[#252B42]">
