@@ -1,12 +1,30 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { ShoppingCart, Heart, Search, Phone, Mail, Menu, X, ChevronDown, User } from 'lucide-react'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pagesOpen, setPagesOpen] = useState(false)
   const cartCount = useSelector(s => s.cart.items.length)
   const wishCount = useSelector(s => s.wishlist.items.length)
+
+  // Close dropdown when clicking outside
+  const pagesRef = useRef(null)
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (pagesRef.current && !pagesRef.current.contains(e.target)) {
+        setPagesOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Pages dropdown items — add more here as you create new pages
+  const pagesLinks = [
+    { label: 'Team', path: '/team' },
+  ]
 
   return (
     <header className="w-full">
@@ -46,13 +64,44 @@ export default function Header() {
 
         {/* Desktop links */}
         <ul className="hidden md:flex items-center gap-5 list-none m-0 p-0">
-          {[['Home','/'],['Shop','/shop',true],['About','/about'],['Blog','/blog'],['Contact','/contact'],['Pages','#',true]].map(([label,path,arrow]) => (
+          {[['Home', '/'], ['Shop', '/shop', true], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact']].map(([label, path, arrow]) => (
             <li key={label}>
               <Link to={path} className="flex items-center gap-1 font-bold text-sm text-[#737373] no-underline hover:text-[#252B42] transition-colors">
                 {label}{arrow && <ChevronDown size={14} />}
               </Link>
             </li>
           ))}
+
+          {/* Pages dropdown */}
+          <li className="relative" ref={pagesRef}>
+            <button
+              onClick={() => setPagesOpen(prev => !prev)}
+              className="flex items-center gap-1 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer hover:text-[#252B42] transition-colors p-0"
+            >
+              Pages
+              <ChevronDown
+                size={14}
+                className="transition-transform duration-200"
+                style={{ transform: pagesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              />
+            </button>
+
+            {/* Dropdown panel */}
+            {pagesOpen && (
+              <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-[#E8E8E8] overflow-hidden z-[200]">
+                {pagesLinks.map(({ label, path }) => (
+                  <Link
+                    key={label}
+                    to={path}
+                    onClick={() => setPagesOpen(false)}
+                    className="block px-4 py-3 font-bold text-sm text-[#737373] no-underline hover:bg-[#F5F5F5] hover:text-[#252B42] transition-colors"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </li>
         </ul>
 
         {/* Right actions */}
@@ -80,13 +129,13 @@ export default function Header() {
 
       {/* Mobile dropdown menu */}
       {menuOpen && (
-  <div className="md:hidden w-full bg-white flex flex-col items-center gap-[30px] py-[60px]">
-    {[['Home','/'],['Shop','/shop'],['Pricing','#'],['Contact','/contact']].map(([label,path]) => (
-      <Link key={label} to={path} onClick={() => setMenuOpen(false)}
-        className="font-normal text-[30px] leading-[45px] tracking-[0.2px] text-[#737373] no-underline text-center">{label}</Link>
-    ))}
-  </div>
-)}
+        <div className="md:hidden w-full bg-white flex flex-col items-center gap-[30px] py-[60px]">
+          {[['Home', '/'], ['Shop', '/shop'], ['Pricing', '#'], ['Contact', '/contact'], ['Team', '/team']].map(([label, path]) => (
+            <Link key={label} to={path} onClick={() => setMenuOpen(false)}
+              className="font-normal text-[30px] leading-[45px] tracking-[0.2px] text-[#737373] no-underline text-center">{label}</Link>
+          ))}
+        </div>
+      )}
     </header>
   )
 }

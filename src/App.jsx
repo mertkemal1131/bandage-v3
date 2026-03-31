@@ -13,6 +13,7 @@ import LoginPage from './pages/LoginPage'
 import CartPage from './pages/CartPage'
 import AboutPage from './pages/AboutPage'
 import ContactPage from './pages/ContactPage'
+import TeamPage from './pages/TeamPage'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/login" component={LoginPage} />
               <Route path="/about" component={AboutPage} />
               <Route path="/contact" component={ContactPage} />
+              <Route path="/team" component={TeamPage} />
             </Switch>
           </PageContent>
           <Footer />
