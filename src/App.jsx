@@ -11,7 +11,7 @@ import ShopPage from './pages/ShopPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import LoginPage from './pages/LoginPage'
 import CartPage from './pages/CartPage'
-import AboutPage from './pages/AboutPage'
+import AboutPage from './pages/AboutPage'   // ← your new About page
 import ContactPage from './pages/ContactPage'
 import TeamPage from './pages/TeamPage'
 

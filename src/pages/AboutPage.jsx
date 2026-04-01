@@ -1,121 +1,289 @@
-import { Link } from 'react-router-dom';
-import { Target, BarChart2, TrendingUp } from 'lucide-react';
+// src/pages/AboutPage.jsx
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTE: Move InitialsAvatar to src/components/InitialsAvatar.jsx and import
+// it in both AboutPage and TeamPage to avoid duplication.
+// ─────────────────────────────────────────────────────────────────────────────
 
-export default function AboutPage() {
-  const stats = [
-    { n: '15K',  l: 'Happy Customers'   },
-    { n: '150K', l: 'Monthly Visitors'  },
-    { n: '15',   l: 'Countries Worldwide'},
-    { n: '100+', l: 'Top Partners'      },
-  ];
-  const team = [
-    { name: 'Username', role: 'Profession', img: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face' },
-    { name: 'Username', role: 'Profession', img: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face' },
-    { name: 'Username', role: 'Profession', img: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face' },
-  ];
+import React from "react";
+import { Facebook, Instagram, Twitter, Play } from "lucide-react";
 
+// ── Shared: Initials fallback avatar (same logic as TeamPage) ─────────────────
+function InitialsAvatar({ name, bg }) {
+  const initials = name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   return (
-    <div className="font-['Montserrat'] bg-white">
-
-      {/* Breadcrumb */}
-      <div className="bg-[#FAFAFA] py-10 text-center border-b border-[#E8E8E8]">
-        <h1 className="font-bold text-[24px] text-[#252B42] mb-2">About Us</h1>
-        <div className="flex justify-center gap-2 font-bold text-[14px] text-[#737373]">
-          <Link to="/" className="text-[#252B42] no-underline">Home</Link>
-          <span className="text-[#BDBDBD]">›</span>
-          <span>About</span>
-        </div>
-      </div>
-
-      {/* Hero split */}
-      <div className="flex flex-col md:flex-row max-w-[1050px] mx-auto px-6 py-20 gap-[60px] items-center">
-        <div className="flex flex-col gap-5 flex-1">
-          <h2 className="font-bold text-[40px] leading-[50px] text-[#252B42] tracking-[0.2px]">About Us</h2>
-          <p className="font-normal text-[14px] text-[#737373] leading-6">
-            We know how large objects will act, but things on a small scale just do not act that way. Scientific
-            rigor brings us to design products that work for you. Our mission is to bring world-class quality
-            fashion to everyone, everywhere.
-          </p>
-          <p className="font-normal text-[14px] text-[#737373] leading-6">
-            Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian
-            mechanics and electromagnetism led to the development of our brand philosophy.
-          </p>
-          <Link to="/shop" className="inline-block bg-[#23A6F0] text-white py-[14px] px-[40px] rounded-[5px] font-bold text-[14px] no-underline w-fit">
-            Shop Now
-          </Link>
-        </div>
-        <div className="flex flex-1 h-[380px]">
-          {[
-            'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=300&h=400&fit=crop',
-            'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=300&h=400&fit=crop',
-          ].map((src, i) => (
-            <img key={i} src={src} alt="" className="flex-1 h-full object-cover min-w-0" />
-          ))}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="bg-[#FAFAFA] py-[60px]">
-        <div className="max-w-[1050px] mx-auto px-6">
-          <div className="text-center mb-12">
-            <p className="font-normal text-[20px] text-[#737373] mb-2">Fun Facts About Us</p>
-            <h2 className="font-bold text-[40px] text-[#252B42] leading-[50px]">Why choose us</h2>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6">
-            {stats.map(({ n, l }) => (
-              <div key={l} className="flex flex-col items-center bg-white rounded-[5px] py-10 px-6 text-center border border-[#E8E8E8] flex-1 min-w-[180px]">
-                <h3 className="font-bold text-[40px] text-[#252B42] mb-2">{n}</h3>
-                <p className="font-bold text-[16px] text-[#737373]">{l}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Team */}
-      <div className="py-20">
-        <div className="max-w-[1050px] mx-auto px-6">
-          <div className="text-center mb-12">
-            <p className="font-normal text-[20px] text-[#737373] mb-2">Meet Our Team</p>
-            <h2 className="font-bold text-[40px] text-[#252B42] leading-[50px]">Meet our great team</h2>
-          </div>
-          <div className="flex flex-wrap justify-center gap-[30px]">
-            {team.map(({ name, role, img }) => (
-              <div key={name + role} className="text-center flex-1 min-w-[240px] max-w-[320px]">
-                <img src={img} alt={name} className="w-full aspect-square object-cover rounded-[5px] mb-4" />
-                <h4 className="font-bold text-[16px] text-[#252B42] mb-1">{name}</h4>
-                <p className="font-bold text-[14px] text-[#737373]">{role}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Services */}
-      <div className="bg-[#FAFAFA] py-20">
-        <div className="max-w-[1050px] mx-auto px-6">
-          <div className="text-center mb-12">
-            <p className="font-normal text-[20px] text-[#737373] mb-2">Featured Products</p>
-            <h2 className="font-bold text-[40px] text-[#252B42]">THE BEST SERVICES</h2>
-          </div>
-          <div className="flex flex-wrap justify-center gap-6">
-            {[
-              { Icon: Target,    bg: 'bg-[#EBF8FF]', c: '#23A6F0', title: 'Easy Wins',   desc: 'Get your best looking smile now!' },
-              { Icon: BarChart2, bg: 'bg-[#EAFAF3]', c: '#2DC071', title: 'Concrete',    desc: 'Assurance that blocks are in the right place.' },
-              { Icon: TrendingUp,bg: 'bg-[#FFF4EE]', c: '#E77C40', title: 'Hack Growth', desc: 'Problems trying to resolve the conflict.' },
-            ].map(({ Icon, bg, c, title, desc }) => (
-              <div key={title} className="flex flex-col items-center bg-white py-10 px-6 text-center rounded-[5px] border border-[#E8E8E8] flex-1 min-w-[240px]">
-                <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 ${bg}`}>
-                  <Icon size={22} color={c} />
-                </div>
-                <h3 className="font-bold text-[16px] text-[#252B42] mb-2">{title}</h3>
-                <p className="font-normal text-[14px] text-[#737373] leading-5">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
+    <div className="w-full h-full flex items-center justify-center" style={{ background: bg }}>
+      <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "2rem", color: "#fff", letterSpacing: "0.05em" }}>
+        {initials}
+      </span>
     </div>
+  );
+}
+
+// ── Team data for About page (3 members, with social links) ──────────────────
+// Replace image, name, title and social hrefs with real data.
+const ABOUT_TEAM = [
+  { id: 1, name: "Username", title: "Profession", bg: "#F5C518", image: "" },  // ← replace
+  { id: 2, name: "Username", title: "Profession", bg: "#B5CFD8", image: "" },  // ← replace
+  { id: 3, name: "Username", title: "Profession", bg: "#6BCB77", image: "" },  // ← replace
+];
+
+// ── Stats data ────────────────────────────────────────────────────────────────
+const STATS = [
+  { value: "15K",  label: "Happy Customers" },
+  { value: "150K", label: "Monthly Visitors" },
+  { value: "15",   label: "Countries Worldwide" },
+  { value: "100+", label: "Top Partners" },
+];
+
+// ── Client logos (text-based placeholders until real SVGs are provided) ───────
+const CLIENTS = ["hooli", "Lyft", "stripe", "aws", "reddit"];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-components
+// ─────────────────────────────────────────────────────────────────────────────
+
+// About team card — same card structure as TeamPage but with social icons
+function AboutTeamCard({ member }) {
+  const [imgError, setImgError] = React.useState(!member.image);
+  return (
+    <div className="flex flex-col items-center w-full md:w-[316px] bg-white rounded-md overflow-hidden">
+      {/* Photo */}
+      <div className="w-full" style={{ height: 231 }}>
+        {member.image && !imgError ? (
+          <img src={member.image} alt={member.name} onError={() => setImgError(true)}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <InitialsAvatar name={member.name} bg={member.bg} />
+        )}
+      </div>
+      {/* Info */}
+      <div className="flex flex-col items-center gap-[10px] py-[30px] px-[30px] w-full">
+        <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 16, color: "#252B42", letterSpacing: "0.1px" }}>
+          {member.name}
+        </span>
+        <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 14, color: "#737373", letterSpacing: "0.2px" }}>
+          {member.title}
+        </span>
+        {/* Social icons */}
+        <div className="flex items-center gap-5 mt-1">
+          <a href="#" aria-label="Facebook"><Facebook size={20} color="#23A6F0" /></a>
+          <a href="#" aria-label="Instagram"><Instagram size={20} color="#23A6F0" /></a>
+          <a href="#" aria-label="Twitter"><Twitter size={20} color="#23A6F0" /></a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Section heading helper
+function SectionHeading({ label, title, paragraph, light = false }) {
+  return (
+    <div className="flex flex-col items-center gap-[10px] text-center">
+      {label && (
+        <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 400, fontSize: 14, color: light ? "#fff" : "#E74040", letterSpacing: "0.2px", margin: 0 }}>
+          {label}
+        </p>
+      )}
+      <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "clamp(24px, 4vw, 40px)", lineHeight: "1.25", color: light ? "#fff" : "#252B42", letterSpacing: "0.2px", margin: 0 }}>
+        {title}
+      </h2>
+      {paragraph && (
+        <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 400, fontSize: 14, lineHeight: "20px", color: light ? "#fff" : "#737373", maxWidth: 469, margin: 0, letterSpacing: "0.2px" }}>
+          {paragraph}
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page
+// ─────────────────────────────────────────────────────────────────────────────
+export default function AboutPage() {
+  return (
+    <main style={{ background: "#FFFFFF", width: "100%" }}>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          1. HERO
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full bg-white overflow-hidden">
+        <div className="max-w-[1050px] mx-auto px-6 py-16 md:py-28 flex flex-col md:flex-row items-center gap-10 md:gap-8">
+          {/* Left — text */}
+          <div className="flex flex-col items-start gap-[35px] w-full md:w-[599px]">
+            <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 16, color: "#252B42", letterSpacing: "0.1px" }}>
+              ABOUT COMPANY
+            </span>
+            <h1 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "clamp(36px, 6vw, 58px)", lineHeight: "1.38", color: "#252B42", letterSpacing: "0.2px", margin: 0 }}>
+              ABOUT US
+            </h1>
+            <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 400, fontSize: 20, lineHeight: "30px", color: "#737373", letterSpacing: "0.2px", margin: 0, maxWidth: 376 }}>
+              We know how large objects will act, but things on a small scale
+            </p>
+            <button style={{ background: "#23A6F0", borderRadius: 5, border: "none", padding: "15px 40px", fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 14, color: "#FFFFFF", cursor: "pointer", letterSpacing: "0.2px" }}>
+              Get Quote Now
+            </button>
+          </div>
+
+          {/* Right — hero image placeholder */}
+          <div className="w-full md:w-[415px] flex-shrink-0 flex items-center justify-center">
+            <div className="relative w-[280px] h-[280px] md:w-[380px] md:h-[380px]">
+              {/* Pink circle background */}
+              <div className="absolute inset-0 rounded-full" style={{ background: "#FFE9EA" }} />
+              {/* Replace src with your hero image import */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span style={{ fontFamily: "Montserrat, sans-serif", color: "#737373", fontSize: 13 }}>
+                  <img src="/background.png" alt="Hero Background" />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          2. CONTENT BLOCK (label + heading + paragraph)
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full bg-white border-t border-[#E6E6E6]">
+        <div className="max-w-[1050px] mx-auto px-6 py-10 flex flex-col md:flex-row items-start gap-10 md:gap-[60px]">
+          {/* Left */}
+          <div className="flex flex-col gap-6 w-full md:w-[394px]">
+            <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 400, fontSize: 14, color: "#E74040", letterSpacing: "0.2px", margin: 0 }}>
+              Problems trying
+            </p>
+            <h3 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 24, lineHeight: "32px", color: "#252B42", letterSpacing: "0.1px", margin: 0 }}>
+              Met minim Mollie non desert Alame est ali cliquy dolor do met sent.
+            </h3>
+          </div>
+          {/* Right */}
+          <div className="w-full md:w-[529px]">
+            <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 400, fontSize: 14, lineHeight: "20px", color: "#737373", letterSpacing: "0.2px", margin: 0 }}>
+              Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          3. STATS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full bg-white">
+        <div className="max-w-[1050px] mx-auto px-6 py-[80px]">
+          <div className="flex flex-wrap justify-center gap-8 md:gap-[30px]">
+            {STATS.map((s) => (
+              <div key={s.label} className="flex flex-col items-center gap-1 w-[140px]">
+                <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "clamp(36px, 5vw, 58px)", lineHeight: "80px", color: "#252B42", letterSpacing: "0.2px" }}>
+                  {s.value}
+                </span>
+                <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 16, color: "#737373", letterSpacing: "0.1px", textAlign: "center" }}>
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          4. VIDEO
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full bg-white">
+        <div className="max-w-[1050px] mx-auto px-6 pb-[80px]">
+          <div className="relative w-full rounded-[20px] overflow-hidden" style={{ height: "clamp(240px, 50vw, 540px)", background: "#B5CFD8" }}>
+            {/* Replace this div's background with your video thumbnail image */}
+            {/* e.g. style={{ backgroundImage: "url('/assets/video-thumb.jpg')", backgroundSize: "cover", backgroundPosition: "center" }} */}
+<div 
+  className="absolute inset-0" 
+  style={{ 
+    backgroundImage: "url('/Video card.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center"
+  }} 
+/>            {/* Play button */}
+            <button
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full border-none cursor-pointer"
+              style={{ width: 92, height: 92, background: "#23A6F0" }}
+              aria-label="Play video"
+            >
+              <Play size={28} color="#FFFFFF" fill="#FFFFFF" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          5. MEET OUR TEAM
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full bg-white">
+        <div className="max-w-[1050px] mx-auto px-6 py-[112px] flex flex-col items-center gap-[112px]">
+          <SectionHeading
+            title="Meet Our Team"
+            paragraph="Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics"
+          />
+          <div className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-[30px] w-full">
+            {ABOUT_TEAM.map((m) => (
+              <AboutTeamCard key={m.id} member={m} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          6. BIG COMPANIES / CLIENTS
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full" style={{ background: "#FAFAFA" }}>
+        <div className="max-w-[1050px] mx-auto px-6 py-[80px] flex flex-col items-center gap-[24px]">
+          <SectionHeading
+            title="Big Companies Are Here"
+            paragraph="Problems trying to resolve the conflict between the two major realms of Classical physics: Newtonian mechanics"
+          />
+          {/* Client logos — replace these spans with real <img> or SVG imports */}
+          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-[30px] py-[50px]">
+            {CLIENTS.map((name) => (
+              <div key={name} className="flex items-center justify-center w-[120px] md:w-[153px]">
+                {/* Replace with: <img src={logoSrc} alt={name} className="max-h-[72px] object-contain opacity-50" /> */}
+                <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 22, color: "#737373", letterSpacing: "0.1px" }}>
+                  {name}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          7. CTA / TESTIMONIAL — blue background
+      ══════════════════════════════════════════════════════════════════════ */}
+      <section className="w-full overflow-hidden" style={{ background: "#2A7CC7" }}>
+        <div className="max-w-[1050px] mx-auto px-6 py-[112px] flex flex-col md:flex-row items-center justify-between gap-10">
+          {/* Left — text */}
+          <div className="flex flex-col items-start gap-6 w-full md:max-w-[438px]">
+            <span style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 16, color: "#FFFFFF", letterSpacing: "0.1px" }}>
+              WORK WITH US
+            </span>
+            <h2 style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: "clamp(28px, 4vw, 40px)", lineHeight: "1.25", color: "#FFFFFF", letterSpacing: "0.2px", margin: 0 }}>
+              Now Let's Grow Yours
+            </h2>
+            <p style={{ fontFamily: "Montserrat, sans-serif", fontWeight: 400, fontSize: 14, lineHeight: "20px", color: "#FFFFFF", letterSpacing: "0.2px", margin: 0 }}>
+              The gradual accumulation of information about atomic and small-scale behaviour during the first quarter of the 20th
+            </p>
+            <button style={{ border: "1px solid #FAFAFA", borderRadius: 5, background: "transparent", padding: "15px 40px", fontFamily: "Montserrat, sans-serif", fontWeight: 700, fontSize: 14, color: "#FAFAFA", cursor: "pointer", letterSpacing: "0.2px" }}>
+              Button
+            </button>
+          </div>
+
+          {/* Right — woman image placeholder */}
+          {/* Right — woman image */}
+<div className="hidden md:block w-[340px] flex-shrink-0">
+  <img src="/desktop-testimonials-4.png" alt="Work with us" className="w-full h-[412px] object-cover rounded-lg" />
+</div>
+        </div>
+      </section>
+
+    </main>
   );
 }
