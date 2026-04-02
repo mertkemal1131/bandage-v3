@@ -1,0 +1,10 @@
+name: Bandage
+values:
+  - key: baseUrl
+    value: 'https://workintech-fe-ecommerce.onrender.com'
+    enabled: true
+    type: default
+  - key: token
+    value: ''
+    enabled: true
+    type: default

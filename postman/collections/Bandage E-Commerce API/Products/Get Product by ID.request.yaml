@@ -1,7 +1,36 @@
 $kind: http-request
-description: Fetch a single product by its ID.
-url: "{{baseUrl}}/products/:id"
+name: Get Product by ID
 method: GET
-pathVariables:
-  id: "1"
+url: '{{baseUrl}}/products/:id'
 order: 2000
+pathVariables:
+  - key: id
+    value: '1'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200 or 404', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 404]);
+      });
+
+      pm.test('If 200, product has required fields', function () {
+          if (pm.response.code === 200) {
+              var jsonData = pm.response.json();
+              pm.expect(jsonData).to.have.property('id');
+              pm.expect(jsonData).to.have.property('name');
+              pm.expect(jsonData).to.have.property('price');
+              pm.expect(jsonData).to.have.property('description');
+          }
+      });
+
+      pm.test('If 404, response has error message', function () {
+          if (pm.response.code === 404) {
+              var jsonData = pm.response.json();
+              pm.expect(jsonData).to.have.property('message');
+          }
+      });
+
+      pm.test('Response time is less than 3000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });

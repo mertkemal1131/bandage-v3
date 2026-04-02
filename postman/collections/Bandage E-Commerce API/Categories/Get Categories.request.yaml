@@ -1,5 +1,30 @@
 $kind: http-request
-description: Fetch all product categories.
-url: "{{baseUrl}}/categories"
+name: Get Categories
 method: GET
+url: '{{baseUrl}}/categories'
 order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response is an array', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an('array');
+      });
+
+      pm.test('Each category has required fields', function () {
+          var jsonData = pm.response.json();
+          jsonData.forEach(function (category) {
+              pm.expect(category).to.have.property('id');
+              pm.expect(category).to.have.property('title');
+              pm.expect(category).to.have.property('gender');
+          });
+      });
+
+      pm.test('Response time is less than 3000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });

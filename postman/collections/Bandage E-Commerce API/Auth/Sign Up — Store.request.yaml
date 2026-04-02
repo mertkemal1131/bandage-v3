@@ -1,16 +1,11 @@
 $kind: http-request
-description: |-
-  Register a new Store account.
-  Includes the nested `store` object with name, phone, tax_no, bank_account.
-
-  Validation rules:
-  - phone: Turkish format 05XXXXXXXXX
-  - tax_no: TXXXXVXXXXXX pattern
-  - bank_account: Valid Turkish IBAN (TR + 24 digits)
-url: "{{baseUrl}}/signup"
+name: Sign Up - Store
 method: POST
+url: '{{baseUrl}}/signup'
+order: 3000
 headers:
-  Content-Type: application/json
+  - key: Content-Type
+    value: application/json
 body:
   type: json
   content: |-
@@ -26,4 +21,21 @@ body:
         "bank_account": "TR330006100519786457841326"
       }
     }
-order: 3000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 201 or 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+
+      pm.test('Response has a message or token', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.satisfy(function (d) {
+              return d.message !== undefined || d.token !== undefined;
+          });
+      });
+
+      pm.test('Response time is less than 5000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(5000);
+      });

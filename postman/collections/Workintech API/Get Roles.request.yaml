@@ -1,0 +1,4 @@
+$kind: http-request
+url: https://workintech-fe-ecommerce.onrender.com/roles
+method: GET
+order: 1000

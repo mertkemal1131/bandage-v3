@@ -1,8 +1,28 @@
 $kind: http-request
-description: Re-validate a stored token. Use this on app load to check if the
-  user session is still valid.
-url: "{{baseUrl}}/verify"
+name: Verify Token
 method: GET
-headers:
-  Authorization: "{{token}}"
+url: '{{baseUrl}}/verify'
 order: 5000
+headers:
+  - key: Authorization
+    value: '{{token}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has user data', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an('object');
+          pm.expect(jsonData).to.have.property('email');
+      });
+
+      pm.test('Token is refreshed if provided', function () {
+          var jsonData = pm.response.json();
+          if (jsonData.token) {
+              pm.environment.set('token', jsonData.token);
+          }
+      });

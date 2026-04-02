@@ -1,16 +1,11 @@
 $kind: http-request
-description: >-
-  Register a new Customer account.
-
-  role_id 3 = Customer (verify with GET /roles first).
-
-
-  ERROR: Re-registering the same email returns an error — use a unique email
-  each time.
-url: "{{baseUrl}}/signup"
+name: Sign Up - Customer
 method: POST
+url: '{{baseUrl}}/signup'
+order: 2000
 headers:
-  Content-Type: application/json
+  - key: Content-Type
+    value: application/json
 body:
   type: json
   content: |-
@@ -20,4 +15,21 @@ body:
       "password": "Test1234!",
       "role_id": 3
     }
-order: 2000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 201 or 200', function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+
+      pm.test('Response has a message or token', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.satisfy(function (d) {
+              return d.message !== undefined || d.token !== undefined;
+          });
+      });
+
+      pm.test('Response time is less than 5000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(5000);
+      });

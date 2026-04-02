@@ -1,9 +1,3 @@
-// src/api/axiosInstance.js
-// ─────────────────────────────────────────────────────────────────────────────
-// Single Axios instance used across the whole project.
-// Import this wherever you need to hit the API instead of importing axios directly.
-// ─────────────────────────────────────────────────────────────────────────────
-
 import axios from 'axios';
 
 const axiosInstance = axios.create({
@@ -11,30 +5,37 @@ const axiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000,
 });
 
-// ── Request interceptor ───────────────────────────────────────────────────────
-// Automatically attach the auth token (if stored) to every request.
+// Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('token')
+        : null;
+
     if (token) {
-      config.headers.Authorization = token;
+      config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor ──────────────────────────────────────────────────────
-// Global error handling — extend as needed.
+// Response interceptor
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.error('API Error:', error.response || error.message);
+
     if (error.response?.status === 401) {
-      // Token expired / invalid — clear storage and reload
       localStorage.removeItem('token');
+      window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );

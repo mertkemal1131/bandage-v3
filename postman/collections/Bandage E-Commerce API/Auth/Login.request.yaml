@@ -1,13 +1,11 @@
 $kind: http-request
-description: >-
-  Login with email and password.
-
-  The test script automatically saves the returned token to the {{token}}
-  collection variable.
-url: "{{baseUrl}}/login"
+name: Login
 method: POST
+url: '{{baseUrl}}/login'
+order: 4000
 headers:
-  Content-Type: application/json
+  - key: Content-Type
+    value: application/json
 body:
   type: json
   content: |-
@@ -17,11 +15,27 @@ body:
     }
 scripts:
   - type: afterResponse
-    code: |-
-      const res = pm.response.json();
-      if (res.token) {
-        pm.collectionVariables.set('token', res.token);
-        console.log('Token saved to collection variable');
-      }
     language: text/javascript
-order: 4000
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has a token', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('token');
+          pm.expect(jsonData.token).to.be.a('string').and.not.empty;
+      });
+
+      pm.test('Token is saved to environment', function () {
+          var jsonData = pm.response.json();
+          if (jsonData.token) {
+              pm.environment.set('token', jsonData.token);
+              pm.expect(pm.environment.get('token')).to.equal(jsonData.token);
+          }
+      });
+
+      pm.test('Response has user data', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('user');
+      });

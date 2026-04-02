@@ -1,0 +1,15 @@
+$kind: http-request
+url: https://workintech-fe-ecommerce.onrender.com/signup
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "name": "John Doe",
+      "email": "john@example.com",
+      "password": "Password123!",
+      "role_id": 1
+    }
+order: 2000

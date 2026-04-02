@@ -8,20 +8,21 @@ import { Eye, EyeOff, ChevronRight, Loader } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// Validation helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Turkish IBAN: TR + 24 digits  →  26 chars total
+// Turkish IBAN: TR + 24 digits → 26 chars total
 const IBAN_REGEX = /^TR\d{24}$/;
 
 // Turkish phone: 05XXXXXXXXX (11 digits starting with 05)
 const TR_PHONE_REGEX = /^(05)\d{9}$/;
 
-// Tax No: T + 4 digits + V + 6 digits  →  "TXXXXVXXXXXX"
+// Tax No: T + 4 digits + V + 6 digits → "TXXXXVXXXXXX"
 const TAX_NO_REGEX = /^T\d{4}V\d{6}$/;
 
 // Password: min 8 chars, at least one uppercase, one lowercase, one digit, one special char
-const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+const PASSWORD_REGEX =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Reusable field wrapper
@@ -48,6 +49,7 @@ export default function SignupPage() {
   const history = useHistory();
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
+  const [rolesError, setRolesError] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -57,6 +59,7 @@ export default function SignupPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm({
     defaultValues: {
@@ -77,29 +80,54 @@ export default function SignupPage() {
   const watchedRoleId = watch('role_id');
   const watchedPassword = watch('password');
 
+  // Clear server error when user starts editing any field
+  useEffect(() => {
+    const subscription = watch(() => {
+      if (serverError) setServerError('');
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, serverError]);
+
   // ── Fetch roles on mount ──────────────────────────────────────────────────
   useEffect(() => {
     axiosInstance
       .get('/roles')
       .then((res) => {
-        setRoles(res.data);
-        // The setValue below isn't available here; default is handled in the select below
+        const fetchedRoles = res.data;
+        setRoles(fetchedRoles);
+
+        // FIX: pre-select "Customer" role — match by code (case-insensitive) first,
+        // then fall back to name so Turkish ("Müşteri") and English ("Customer") both work
+        const customerRole = fetchedRoles.find(
+          (r) =>
+            r.code?.toLowerCase() === 'customer' ||
+            r.name?.toLowerCase() === 'customer' ||
+            r.name?.toLowerCase() === 'müşteri'
+        );
+        if (customerRole) {
+          setValue('role_id', String(customerRole.id));
+        }
       })
       .catch(() => {
-        toast.error('Could not load roles. Please refresh.');
+        setRolesError(true);
+        toast.error('Could not load roles. Please refresh the page.');
       })
       .finally(() => setRolesLoading(false));
-  }, []);
+  }, [setValue]);
 
-  // Derive the selected role object so we can check if it's "Store"
+  // Derive selected role — check only by code (most reliable field)
   const selectedRole = roles.find((r) => String(r.id) === String(watchedRoleId));
-  const isStore = selectedRole?.name?.toLowerCase() === 'store';
+  const isStore =
+    selectedRole?.code?.toLowerCase() === 'store' ||
+    selectedRole?.name?.toLowerCase() === 'store' ||
+    selectedRole?.name?.toLowerCase() === 'mağaza';
 
   // ── Submit handler ────────────────────────────────────────────────────────
   const onSubmit = async (data) => {
     setServerError('');
 
     // Build payload — exact field names required by the API
+    // POST https://workintech-fe-ecommerce.onrender.com/signup
     const payload = {
       name: data.name,
       email: data.email,
@@ -118,8 +146,17 @@ export default function SignupPage() {
 
     try {
       await axiosInstance.post('/signup', payload);
-      toast.warning('You need to click link in email to activate your account!');
-      history.goBack();
+
+      // FIX: use toast.success so the color feedback is clear,
+      // but inform the user they still need to activate via email.
+      toast.success(
+        'Account created! Check your email and click the activation link to continue.',
+        { autoClose: 6000 }
+      );
+
+      // FIX: redirect to /login instead of history.goBack() — goBack() can land the user
+      // on an unexpected page (e.g. the home page mid-flow). Login is the correct next step.
+      history.push('/login');
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -154,13 +191,15 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="p-8 flex flex-col gap-5">
+          {/* FIX: noValidate prevents browser native validation from conflicting with RHF */}
+          <form noValidate onSubmit={handleSubmit(onSubmit)} className="p-8 flex flex-col gap-5">
 
             {/* ── Name ── */}
             <Field label="Full Name" error={errors.name}>
               <input
                 type="text"
                 placeholder="John Doe"
+                autoFocus
                 className={inputCls}
                 {...register('name', {
                   required: 'Name is required',
@@ -240,18 +279,26 @@ export default function SignupPage() {
                 <div className="flex items-center gap-2 text-[#737373] text-[14px]">
                   <Loader size={14} className="animate-spin" /> Loading roles...
                 </div>
+              ) : rolesError ? (
+                // FIX: show a clear error state when roles fail to load instead of an empty select
+                <div className="flex items-center gap-2 text-[#E2462C] text-[13px] font-semibold bg-[#fff5f5] border border-[#E2462C] rounded-[5px] px-4 py-3">
+                  Could not load roles.{' '}
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="underline bg-transparent border-none cursor-pointer text-[#E2462C] font-['Montserrat'] font-semibold text-[13px] p-0"
+                  >
+                    Refresh
+                  </button>
+                </div>
               ) : (
                 <select
                   className={`${inputCls} cursor-pointer`}
                   {...register('role_id', { required: 'Please select a role' })}
-                  defaultValue={
-                    // Pre-select "Customer" role by default
-                    roles.find((r) => r.name?.toLowerCase() === 'customer')?.id ?? ''
-                  }
                 >
                   <option value="" disabled>Select a role</option>
                   {roles.map((role) => (
-                    <option key={role.id} value={role.id}>
+                    <option key={role.id} value={String(role.id)}>
                       {role.name}
                     </option>
                   ))}
@@ -335,11 +382,12 @@ export default function SignupPage() {
             )}
 
             {/* ── Submit ── */}
+            {/* FIX: also disabled while rolesLoading — user can't submit without a valid role_id */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || rolesLoading || rolesError}
               className={`w-full flex items-center justify-center gap-2 text-white border-none rounded-[5px] py-[14px] font-bold text-[14px] transition-colors ${
-                isSubmitting
+                isSubmitting || rolesLoading || rolesError
                   ? 'bg-[#9dd4f7] cursor-not-allowed'
                   : 'bg-[#23A6F0] cursor-pointer hover:bg-[#1a8fd1]'
               }`}

@@ -1,5 +1,0 @@
-$kind: http-request
-description: Fetch all product categories.
-url: "{{baseUrl}}/categories"
-method: GET
-order: 1000

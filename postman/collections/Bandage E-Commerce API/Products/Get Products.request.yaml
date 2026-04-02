@@ -1,26 +1,46 @@
 $kind: http-request
-description: Fetch products with optional filtering, sorting and pagination.
-url: "{{baseUrl}}/products"
+name: Get Products
 method: GET
-queryParams:
-  - key: category
-    value: ""
-    disabled: true
-    description: Filter by category ID
-  - key: sort
-    value: ""
-    disabled: true
-    description: e.g. price:asc, price:desc, rating:asc, rating:desc
-  - key: filter
-    value: ""
-    disabled: true
-    description: Search/filter text
-  - key: offset
-    value: "0"
-    disabled: true
-    description: Pagination offset
-  - key: limit
-    value: "25"
-    disabled: true
-    description: Items per page
+url: '{{baseUrl}}/products'
 order: 1000
+queryParams:
+  - key: limit
+    value: '25'
+  - key: offset
+    value: '0'
+  - key: sort
+    value: 'rating:desc'
+    disabled: true
+  - key: filter
+    value: ''
+    disabled: true
+  - key: category
+    value: ''
+    disabled: true
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response has products array and total count', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('products');
+          pm.expect(jsonData.products).to.be.an('array');
+          pm.expect(jsonData).to.have.property('total');
+      });
+
+      pm.test('Each product has required fields', function () {
+          var jsonData = pm.response.json();
+          jsonData.products.forEach(function (product) {
+              pm.expect(product).to.have.property('id');
+              pm.expect(product).to.have.property('name');
+              pm.expect(product).to.have.property('price');
+          });
+      });
+
+      pm.test('Response time is less than 5000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(5000);
+      });

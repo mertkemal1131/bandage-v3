@@ -1,8 +1,0 @@
-$kind: http-request
-description: Re-validate a stored token. Use this on app load to check if the
-  user session is still valid.
-url: "{{baseUrl}}/verify"
-method: GET
-headers:
-  Authorization: "{{token}}"
-order: 5000

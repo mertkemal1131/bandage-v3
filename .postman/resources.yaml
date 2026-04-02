@@ -7,7 +7,8 @@ workspace:
 cloudResources:
   collections:
     ..\postman\collections\Bandage E-Commerce API: b344545d-a00e-4919-8601-688dab4ff61f
-    ..\postman\collections\Bandage E-Commerce API Copy: f7cc5b74-802c-4806-ab17-4e61378a3a7a
+    ..\postman\collections\Workintech E-commerce API: cc45fec7-ab8b-4b45-8c0d-c24a924c855d
+    ..\postman\collections\Workintech API: 00e1e4e7-845b-4bdd-b1e2-1b5e74b83514
 
 # All resources in the `postman/` folder are automatically registered in Local View.
 # Point to additional files outside the `postman/` folder to register them individually. Example:

@@ -1,7 +1,29 @@
 $kind: http-request
-description: |-
-  Fetch all available roles (Customer, Store, Admin etc.).
-  Used to populate the role dropdown on the signup page.
-url: "{{baseUrl}}/roles"
+name: Get Roles
 method: GET
+url: '{{baseUrl}}/roles'
 order: 1000
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status code is 200', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response is an array', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an('array');
+      });
+
+      pm.test('Each role has id and name', function () {
+          var jsonData = pm.response.json();
+          jsonData.forEach(function (role) {
+              pm.expect(role).to.have.property('id');
+              pm.expect(role).to.have.property('name');
+          });
+      });
+
+      pm.test('Response time is less than 3000ms', function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });
