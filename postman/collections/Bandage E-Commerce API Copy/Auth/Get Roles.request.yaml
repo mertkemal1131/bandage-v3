@@ -1,0 +1,7 @@
+$kind: http-request
+description: |-
+  Fetch all available roles (Customer, Store, Admin etc.).
+  Used to populate the role dropdown on the signup page.
+url: "{{baseUrl}}/roles"
+method: GET
+order: 1000

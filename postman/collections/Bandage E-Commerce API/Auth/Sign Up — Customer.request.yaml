@@ -1,0 +1,23 @@
+$kind: http-request
+description: >-
+  Register a new Customer account.
+
+  role_id 3 = Customer (verify with GET /roles first).
+
+
+  ERROR: Re-registering the same email returns an error — use a unique email
+  each time.
+url: "{{baseUrl}}/signup"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password": "Test1234!",
+      "role_id": 3
+    }
+order: 2000

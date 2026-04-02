@@ -1,0 +1,7 @@
+$kind: http-request
+description: Fetch a single product by its ID.
+url: "{{baseUrl}}/products/:id"
+method: GET
+pathVariables:
+  id: "1"
+order: 2000

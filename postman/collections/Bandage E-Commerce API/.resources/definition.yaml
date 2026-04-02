@@ -1,0 +1,12 @@
+$kind: collection
+description: |-
+  API collection for the Bandage e-commerce project.
+  Base URL: https://workintech-fe-ecommerce.onrender.com
+
+  How to use:
+  1. Import this file into Postman (File → Import)
+  2. Set the {{baseUrl}} variable in the collection's Variables tab
+  3. After login, copy the token response and set {{token}} variable
+variables:
+  baseUrl: https://workintech-fe-ecommerce.onrender.com
+  token: ""

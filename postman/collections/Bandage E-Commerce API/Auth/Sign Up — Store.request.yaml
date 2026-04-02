@@ -1,0 +1,29 @@
+$kind: http-request
+description: |-
+  Register a new Store account.
+  Includes the nested `store` object with name, phone, tax_no, bank_account.
+
+  Validation rules:
+  - phone: Turkish format 05XXXXXXXXX
+  - tax_no: TXXXXVXXXXXX pattern
+  - bank_account: Valid Turkish IBAN (TR + 24 digits)
+url: "{{baseUrl}}/signup"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Store Owner",
+      "email": "storeowner@example.com",
+      "password": "Store1234!",
+      "role_id": 2,
+      "store": {
+        "name": "My Bandage Store",
+        "phone": "05321234567",
+        "tax_no": "T1234V123456",
+        "bank_account": "TR330006100519786457841326"
+      }
+    }
+order: 3000

@@ -1,0 +1,16 @@
+# Use this workspace to collaborate
+workspace:
+  id: ff90a455-8d2a-40ea-8ff8-3650f3b4ae4e
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ..\postman\collections\Bandage E-Commerce API: b344545d-a00e-4919-8601-688dab4ff61f
+    ..\postman\collections\Bandage E-Commerce API Copy: f7cc5b74-802c-4806-ab17-4e61378a3a7a
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

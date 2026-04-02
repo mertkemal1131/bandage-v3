@@ -1,0 +1,26 @@
+$kind: http-request
+description: Fetch products with optional filtering, sorting and pagination.
+url: "{{baseUrl}}/products"
+method: GET
+queryParams:
+  - key: category
+    value: ""
+    disabled: true
+    description: Filter by category ID
+  - key: sort
+    value: ""
+    disabled: true
+    description: e.g. price:asc, price:desc, rating:asc, rating:desc
+  - key: filter
+    value: ""
+    disabled: true
+    description: Search/filter text
+  - key: offset
+    value: "0"
+    disabled: true
+    description: Pagination offset
+  - key: limit
+    value: "25"
+    disabled: true
+    description: Items per page
+order: 1000
