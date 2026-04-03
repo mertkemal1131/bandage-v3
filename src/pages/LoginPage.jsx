@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import { Eye, EyeOff, Mail, Lock, User, ChevronRight, Loader } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
+import { loginUser, fetchRolesIfNeeded } from '../store/thunks';
 import { setUser } from '../store/clientReducer';
-import { fetchRolesIfNeeded } from '../store/thunks';
 
 const IBAN_REGEX     = /^TR\d{24}$/;
 const TR_PHONE_REGEX = /^(05)\d{9}$/;
@@ -63,33 +63,20 @@ export default function LoginPage() {
 function LoginForm({ onSwitch }) {
   const dispatch = useDispatch();
   const history  = useHistory();
-  const [showPw, setShowPw]         = useState(false);
-  const [loginError, setLoginError] = useState('');
-  const [loading, setLoading]       = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    defaultValues: { email: '', password: '' },
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+    defaultValues: { email: '', password: '', rememberMe: false },
   });
 
-  const onSubmit = async (data) => {
-    setLoginError('');
-    setLoading(true);
-    try {
-      const res = await axiosInstance.post('/login', {
-        email: data.email,
-        password: data.password,
-      });
-      const { token, user, name, email } = res.data;
-      if (token) localStorage.setItem('token', token);
-      dispatch(setUser(user || { name: name || data.email, email: email || data.email }));
-      toast.success('Welcome back!');
-      history.goBack();
-    } catch (err) {
-      const msg = err.response?.data?.message || err.response?.data || 'Invalid email or password.';
-      setLoginError(typeof msg === 'string' ? msg : 'Login failed.');
-    } finally {
-      setLoading(false);
-    }
+  // Delegates entirely to the loginUser thunk:
+  //  • POSTs to /login
+  //  • saves token to localStorage ONLY when rememberMe is checked
+  //  • dispatches setUser on success → toast → redirect
+  //  • shows error toast on failure, keeps user on this page
+  const onSubmit = ({ email, password, rememberMe }) => {
+    console.log('[LoginForm] onSubmit called — rememberMe:', rememberMe);
+    dispatch(loginUser(email, password, rememberMe, history));
   };
 
   return (
@@ -122,25 +109,23 @@ function LoginForm({ onSwitch }) {
         </div>
       </Field>
 
-      {loginError && (
-        <p className="text-[13px] text-[#E2462C] font-semibold bg-[#fff5f5] px-[14px] py-[10px] rounded-[5px] mb-4">{loginError}</p>
-      )}
-
       <div className="flex items-center justify-between mb-5 text-[13px]">
         <label className="flex items-center gap-1.5 cursor-pointer text-[#737373] font-semibold">
-          <input type="checkbox" className="accent-[#23A6F0]" /> Remember me
+          <input type="checkbox" className="accent-[#23A6F0]"
+            {...register('rememberMe')} />
+          Remember me
         </label>
         <button type="button" className="bg-transparent border-none cursor-pointer text-[#23A6F0] font-['Montserrat'] font-bold text-[13px]">
           Forgot password?
         </button>
       </div>
 
-      <button type="submit" disabled={loading}
+      <button type="submit" disabled={isSubmitting}
         className={`w-full flex items-center justify-center gap-2 text-white border-none rounded-[5px] py-[14px] font-['Montserrat'] font-bold text-[14px] mb-4 transition-colors ${
-          loading ? 'bg-[#9dd4f7] cursor-not-allowed' : 'bg-[#23A6F0] cursor-pointer hover:bg-[#1a8fd1]'
+          isSubmitting ? 'bg-[#9dd4f7] cursor-not-allowed' : 'bg-[#23A6F0] cursor-pointer hover:bg-[#1a8fd1]'
         }`}>
-        {loading && <Loader size={16} className="animate-spin" />}
-        {loading ? 'Signing in...' : 'Login'}
+        {isSubmitting && <Loader size={16} className="animate-spin" />}
+        {isSubmitting ? 'Signing in...' : 'Login'}
       </button>
 
       <p className="text-center text-[13px] text-[#737373]">
