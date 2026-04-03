@@ -6,6 +6,8 @@ import { Link, useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Eye, EyeOff, ChevronRight, Loader } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchRolesIfNeeded } from '../store/thunks';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Validation helpers

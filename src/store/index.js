@@ -1,61 +1,34 @@
 import { createStore, applyMiddleware, combineReducers } from 'redux';
 import { thunk } from 'redux-thunk';
+import logger from 'redux-logger';
 
-// ── Cart ──────────────────────────────────────────────────────────────────────
-const cartInitial = { items: [], total: 0 };
-function cartReducer(state = cartInitial, action) {
-  switch (action.type) {
-    case 'ADD_TO_CART': {
-      const exists = state.items.find(i => i.id === action.payload.id);
-      const items = exists
-        ? state.items.map(i => i.id === action.payload.id ? { ...i, qty: i.qty + 1 } : i)
-        : [...state.items, { ...action.payload, qty: 1 }];
-      return { items, total: items.reduce((s, i) => s + i.price * i.qty, 0) };
-    }
-    case 'REMOVE_FROM_CART': {
-      const items = state.items.filter(i => i.id !== action.payload);
-      return { items, total: items.reduce((s, i) => s + i.price * i.qty, 0) };
-    }
-    case 'UPDATE_QTY': {
-      const items = state.items.map(i => i.id === action.payload.id ? { ...i, qty: Math.max(1, action.payload.qty) } : i);
-      return { items, total: items.reduce((s, i) => s + i.price * i.qty, 0) };
-    }
-    case 'CLEAR_CART':
-      return cartInitial;
-    default: return state;
-  }
-}
+import clientReducer       from './clientReducer';
+import productReducer      from './productReducer';
+import shoppingCartReducer from './shoppingCartReducer';
+import { wishlistReducer } from './shoppingCartReducer';
 
-// ── Wishlist ──────────────────────────────────────────────────────────────────
-function wishlistReducer(state = { items: [] }, action) {
-  switch (action.type) {
-    case 'TOGGLE_WISHLIST': {
-      const exists = state.items.find(i => i.id === action.payload.id);
-      return { items: exists ? state.items.filter(i => i.id !== action.payload.id) : [...state.items, action.payload] };
-    }
-    default: return state;
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Root reducer
+// ─────────────────────────────────────────────────────────────────────────────
+const rootReducer = combineReducers({
+  client:       clientReducer,        // user, addressList, creditCards, roles, theme, language
+  product:      productReducer,       // categories, productList, total, limit, offset, filter, fetchState
+  shoppingCart: shoppingCartReducer,  // cart [{count, product}], payment, address
+  wishlist:     wishlistReducer,      // items [] — UI convenience, not in spec
+});
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-function authReducer(state = { user: null, loading: false, error: null }, action) {
-  switch (action.type) {
-    case 'AUTH_LOADING': return { ...state, loading: true, error: null };
-    case 'AUTH_SUCCESS': return { user: action.payload, loading: false, error: null };
-    case 'AUTH_FAIL': return { ...state, loading: false, error: action.payload };
-    case 'LOGOUT': return { user: null, loading: false, error: null };
-    default: return state;
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Middleware
+// Only attach logger in development so production logs stay clean
+// ─────────────────────────────────────────────────────────────────────────────
+const middleware =
+  process.env.NODE_ENV === 'development'
+    ? applyMiddleware(thunk, logger)
+    : applyMiddleware(thunk);
 
-// ── Products ──────────────────────────────────────────────────────────────────
-function productsReducer(state = { list: [], loading: false, filter: { category: 'all', sort: 'featured', search: '' } }, action) {
-  switch (action.type) {
-    case 'SET_FILTER': return { ...state, filter: { ...state.filter, ...action.payload } };
-    default: return state;
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Store
+// ─────────────────────────────────────────────────────────────────────────────
+const store = createStore(rootReducer, middleware);
 
-const rootReducer = combineReducers({ cart: cartReducer, wishlist: wishlistReducer, auth: authReducer, products: productsReducer });
-const store = createStore(rootReducer, applyMiddleware(thunk));
 export default store;

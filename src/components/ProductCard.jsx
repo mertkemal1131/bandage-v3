@@ -1,4 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux'
+import { addToCart, toggleWishlist } from '../store/shoppingCartReducer'
 import { useHistory } from 'react-router-dom'
 import { Heart, ShoppingCart, Eye } from 'lucide-react'
 import { toast } from 'react-toastify'
@@ -10,8 +11,8 @@ export default function ProductCard({ product, cardWidth = 'w-full', imageHeight
   const history = useHistory()
   const isWished = useSelector(s => s.wishlist.items.some(i => i.id === product.id))
 
-  const addToCart = e => { e.stopPropagation(); dispatch({ type: 'ADD_TO_CART', payload: product }); toast.success(`${product.name} added!`, { autoClose: 2000 }) }
-  const toggleWish = e => { e.stopPropagation(); dispatch({ type: 'TOGGLE_WISHLIST', payload: product }); toast.info(isWished ? 'Removed' : 'Added to wishlist!', { autoClose: 2000 }) }
+  const addToCart = e => { e.stopPropagation(); dispatch(addToCart(product)); toast.success(`${product.name} added!`, { autoClose: 2000 }) }
+  const toggleWish = e => { e.stopPropagation(); dispatch(toggleWishlist(product)); toast.info(isWished ? 'Removed' : 'Added to wishlist!', { autoClose: 2000 }) }
   const goDetail = () => history.push(`/product/${product.id}`)
 
   return (

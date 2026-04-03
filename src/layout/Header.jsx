@@ -2,25 +2,29 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { ShoppingCart, Heart, Search, Phone, Mail, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
+import { setUser } from '../store/clientReducer'
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuOpen, setMenuOpen]   = useState(false)
   const [pagesOpen, setPagesOpen] = useState(false)
-  const cartCount = useSelector(s => s.cart.items.length)
-  const wishCount = useSelector(s => s.wishlist.items.length)
-  const { user } = useSelector(s => s.auth)
-  const dispatch = useDispatch()
   const location = useLocation()
 
+  // ── Selectors ──────────────────────────────────────────────────────────────
+  const user      = useSelector(s => s.client.user)
+  const cartCount = useSelector(s =>
+    s.shoppingCart.cart.reduce((sum, item) => sum + item.count, 0)
+  )
+  const wishCount = useSelector(s => s.wishlist.items.length)
+  const dispatch  = useDispatch()
+
+  // Close Pages dropdown on outside click
   const pagesRef = useRef(null)
   useEffect(() => {
-    function handleClickOutside(e) {
-      if (pagesRef.current && !pagesRef.current.contains(e.target)) {
-        setPagesOpen(false)
-      }
+    const handler = (e) => {
+      if (pagesRef.current && !pagesRef.current.contains(e.target)) setPagesOpen(false)
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [])
 
   // Close mobile menu on route change
@@ -30,18 +34,9 @@ export default function Header() {
 
   const handleLogout = () => {
     localStorage.removeItem('token')
-    dispatch({ type: 'LOGOUT' })
+    dispatch(setUser(null))
     setMenuOpen(false)
   }
-
-  const mobileNavLinks = [
-    ['Home',    '/'],
-    ['Shop',    '/shop'],
-    ['About',   '/about'],
-    ['Blog',    '/blog'],
-    ['Contact', '/contact'],
-    ['Pages',   null], // handled separately as expandable
-  ]
 
   return (
     <header className="w-full">
@@ -90,8 +85,6 @@ export default function Header() {
               </Link>
             </li>
           ))}
-
-          {/* Pages dropdown */}
           <li className="relative" ref={pagesRef}>
             <button
               onClick={() => setPagesOpen(p => !p)}
@@ -113,7 +106,7 @@ export default function Header() {
           </li>
         </ul>
 
-        {/* ── Desktop right actions ── */}
+        {/* Desktop right actions */}
         <div className="hidden md:flex items-center gap-1 shrink-0">
           {user ? (
             <div className="flex items-center gap-2">
@@ -143,12 +136,8 @@ export default function Header() {
           </button>
         </div>
 
-        {/* ── Mobile: hamburger only (no icons in nav bar) ── */}
-        <button
-          onClick={() => setMenuOpen(v => !v)}
-          className="md:hidden p-2 bg-transparent border-none cursor-pointer"
-          aria-label="Toggle menu"
-        >
+        {/* Mobile: hamburger only */}
+        <button onClick={() => setMenuOpen(v => !v)} className="md:hidden p-2 bg-transparent border-none cursor-pointer" aria-label="Toggle menu">
           {menuOpen ? <X size={24} color="#252B42" /> : <Menu size={24} color="#252B42" />}
         </button>
       </nav>
@@ -156,28 +145,20 @@ export default function Header() {
       {/* ── Mobile dropdown menu ───────────────────────────────────────── */}
       {menuOpen && (
         <div className="md:hidden w-full bg-white flex flex-col items-center py-[60px] gap-[30px] shadow-md z-[99] relative">
-
-          {/* Nav links */}
           {[['Home', '/'], ['Shop', '/shop'], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Pages', '/team']].map(([label, path]) => {
             const isActive = location.pathname === path
             return (
-              <Link
-                key={label}
-                to={path}
-                onClick={() => setMenuOpen(false)}
+              <Link key={label} to={path} onClick={() => setMenuOpen(false)}
                 className={`text-[30px] leading-[45px] tracking-[0.2px] no-underline text-center transition-colors ${
                   isActive ? 'font-bold text-[#252B42]' : 'font-normal text-[#737373]'
-                }`}
-              >
+                }`}>
                 {label}
               </Link>
             )
           })}
 
-          {/* Divider */}
-          <div className="w-full h-[1px] bg-[#E8E8E8] mx-8" />
+          <div className="w-full h-[1px] bg-[#E8E8E8]" />
 
-          {/* Login/Register or logged-in user */}
           {user ? (
             <>
               <span className="text-[24px] font-bold text-[#252B42] flex items-center gap-2">
@@ -191,34 +172,23 @@ export default function Header() {
           ) : (
             <Link to="/login" onClick={() => setMenuOpen(false)}
               className="flex items-center gap-2 text-[24px] font-bold text-[#23A6F0] no-underline">
-              <User size={24} color="#23A6F0" strokeWidth={2} />
-              Login / Register
+              <User size={24} color="#23A6F0" strokeWidth={2} /> Login / Register
             </Link>
           )}
 
-          {/* Action icons — search, cart, wishlist */}
-          <button className="p-0 bg-transparent border-none cursor-pointer flex items-center">
+          <button className="p-0 bg-transparent border-none cursor-pointer">
             <Search size={28} color="#23A6F0" strokeWidth={2} />
           </button>
 
           <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-1.5 no-underline">
             <ShoppingCart size={28} color="#23A6F0" strokeWidth={2} />
-            {cartCount > 0 && (
-              <span className="min-w-[20px] h-[20px] rounded-full bg-[#23A6F0] text-white font-bold text-[12px] flex items-center justify-center px-1">
-                {cartCount}
-              </span>
-            )}
+            {cartCount > 0 && <span className="min-w-[20px] h-[20px] rounded-full bg-[#23A6F0] text-white font-bold text-[12px] flex items-center justify-center px-1">{cartCount}</span>}
           </Link>
 
           <button className="flex items-center gap-1.5 p-0 bg-transparent border-none cursor-pointer">
             <Heart size={28} color="#23A6F0" strokeWidth={2} />
-            {wishCount > 0 && (
-              <span className="min-w-[20px] h-[20px] rounded-full bg-[#23A6F0] text-white font-bold text-[12px] flex items-center justify-center px-1">
-                {wishCount}
-              </span>
-            )}
+            {wishCount > 0 && <span className="min-w-[20px] h-[20px] rounded-full bg-[#23A6F0] text-white font-bold text-[12px] flex items-center justify-center px-1">{wishCount}</span>}
           </button>
-
         </div>
       )}
     </header>

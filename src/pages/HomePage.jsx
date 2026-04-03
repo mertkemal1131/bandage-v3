@@ -1,5 +1,6 @@
 import { Link, useHistory } from 'react-router-dom'
 import { useDispatch, useSelector } from 'react-redux'
+import { addToCart, toggleWishlist } from '../store/shoppingCartReducer'
 import { TrendingUp, Heart, ShoppingCart, Eye, Star, Tag, Calendar, BarChart2, ArrowRight, BookOpen, BookMarked } from 'lucide-react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Pagination, Navigation } from 'swiper/modules'
@@ -248,8 +249,8 @@ function HorizCard({ product }) {
         </div>
         <div className="absolute left-1/2 -translate-x-1/2 bottom-6 flex gap-2.5" onClick={e => e.stopPropagation()}>
           {[
-            { fn: () => dispatch({ type:'TOGGLE_WISHLIST', payload:product }), node: <Heart size={16} color={isWishlisted ? '#E74040':'#BDBDBD'} fill={isWishlisted ? '#E74040':'none'} /> },
-            { fn: () => dispatch({ type:'ADD_TO_CART', payload:product }),     node: <ShoppingCart size={16} color="#252B42" /> },
+            { fn: () => dispatch(toggleWishlist(product)), node: <Heart size={16} color={isWishlisted ? '#E74040':'#BDBDBD'} fill={isWishlisted ? '#E74040':'none'} /> },
+            { fn: () => dispatch(addToCart(product)),     node: <ShoppingCart size={16} color="#252B42" /> },
             { fn: () => history.push(`/product/${product.id}`),                node: <Eye size={16} color="#000" /> },
           ].map(({ fn, node }, i) => (
             <button key={i} onClick={e => { e.stopPropagation(); fn() }} className="w-10 h-10 rounded-full bg-white border-none cursor-pointer flex items-center justify-center hover:bg-[#eef7ff] transition-colors shadow-md">

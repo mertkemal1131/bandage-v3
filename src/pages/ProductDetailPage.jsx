@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { Heart, ShoppingCart, ChevronRight, ChevronLeft, Share2 } from 'lucide-react';
 import { products } from '../data/mockData';
+import { addToCart, toggleWishlist } from '../store/shoppingCartReducer';
 import ProductCard from '../components/ProductCard';
 import BrandLogos from '../components/BrandLogos';
 import Stars from '../components/Stars';
@@ -48,8 +49,8 @@ export default function ProductDetailPage() {
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 8);
 
-  const addToCart  = () => { dispatch({ type: 'ADD_TO_CART', payload: product }); toast.success(`${product.name} added to cart!`, { autoClose: 2000 }); };
-  const toggleWish = () => { dispatch({ type: 'TOGGLE_WISHLIST', payload: product }); toast.info(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist!', { autoClose: 2000 }); };
+  const handleAddToCart = () => { dispatch(addToCart(product)); toast.success(`${product.name} added to cart!`, { autoClose: 2000 }); };
+  const handleToggleWish = () => { dispatch(toggleWishlist(product)); toast.info(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist!', { autoClose: 2000 }); };
   const prevImg    = () => setActiveImg(i => (i - 1 + thumbImgs.length) % thumbImgs.length);
   const nextImg    = () => setActiveImg(i => (i + 1) % thumbImgs.length);
 
@@ -207,23 +208,23 @@ export default function ProductDetailPage() {
               </div>
 
               {/* product-actions — gap 10px */}
-              {/* Figma: "Select Options" btn 148×44 + like + basket + more (40×40 circles) */}
+              {/* Figma: "Add to Cart" btn 148×44 + like + basket + more (40×40 circles) */}
               <div className="flex items-center gap-[10px] flex-wrap">
-                <button onClick={addToCart}
+                <button onClick={handleAddToCart}
                   className={[
                     'w-[148px] h-[44px] bg-[#23A6F0] text-white flex-shrink-0',
                     'border-none rounded-[5px] cursor-pointer',
                     "font-['Montserrat'] font-bold text-[14px] leading-[24px] tracking-[0.2px]",
                     'hover:bg-[#1a8fd1] transition-colors duration-200',
                   ].join(' ')}>
-                  Select Options
+                  Add to Cart
                 </button>
 
-                <IconRoundBtn onClick={toggleWish} title="Wishlist" active={isWishlisted}>
+                <IconRoundBtn onClick={handleToggleWish} title="Wishlist" active={isWishlisted}>
                   <Heart size={16} fill={isWishlisted ? 'currentColor' : 'none'} />
                 </IconRoundBtn>
 
-                <IconRoundBtn onClick={addToCart} title="Add to Cart">
+                <IconRoundBtn onClick={handleAddToCart} title="Add to Cart">
                   <ShoppingCart size={16} />
                 </IconRoundBtn>
 

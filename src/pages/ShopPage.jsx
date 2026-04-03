@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { setFilter, setOffset } from '../store/productReducer';
+import { addToCart } from '../store/shoppingCartReducer';
 import { Link } from 'react-router-dom';
 import { ChevronDown, LayoutGrid, List } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
@@ -21,20 +23,27 @@ const ITEMS_PER_PAGE = 12;
 
 export default function ShopPage() {
   const dispatch = useDispatch();
-  const { filter } = useSelector(s => s.products);
-  const [view, setView] = useState('grid');
-  const [page, setPage] = useState(1);
-  const setFilter = (p) => { dispatch({ type: 'SET_FILTER', payload: p }); setPage(1); };
+  // filter string from Redux (text search); category & sort are local UI state
+  const searchFilter = useSelector(s => s.product.filter);
+  const [category, setCategory] = useState('all');
+  const [sort,     setSort]     = useState('featured');
+  const [view,     setView]     = useState('grid');
+  const [page,     setPage]     = useState(1);
+
+  // Dispatch search string to Redux store; reset pagination
+  const handleSearchChange = (search) => { dispatch(setFilter(search)); setPage(1); };
+  const handleCategoryChange = (cat)  => { setCategory(cat); setPage(1); };
+  const handleSortChange     = (s)    => { setSort(s);       setPage(1); };
 
   const filtered = useMemo(() => {
     let list = [...products];
-    if (filter.category !== 'all') list = list.filter(p => p.category === filter.category);
-    if (filter.search) list = list.filter(p => p.name.toLowerCase().includes(filter.search.toLowerCase()));
-    if (filter.sort === 'price-asc') list.sort((a, b) => a.price - b.price);
-    else if (filter.sort === 'price-desc') list.sort((a, b) => b.price - a.price);
-    else if (filter.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
+    if (category !== 'all') list = list.filter(p => p.category === category);
+    if (searchFilter)       list = list.filter(p => p.name.toLowerCase().includes(searchFilter.toLowerCase()));
+    if (sort === 'price-asc')  list.sort((a, b) => a.price - b.price);
+    else if (sort === 'price-desc') list.sort((a, b) => b.price - a.price);
+    else if (sort === 'rating')     list.sort((a, b) => b.rating - a.rating);
     return list;
-  }, [filter]);
+  }, [searchFilter, category, sort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -126,8 +135,8 @@ export default function ShopPage() {
             <div className="flex items-center gap-[15px]">
               <div className="relative">
                 <select
-                  value={filter.sort}
-                  onChange={e => setFilter({ sort: e.target.value })}
+                  value={sort}
+                  onChange={e => handleSortChange(e.target.value)}
                   className="w-[141px] h-[50px] bg-[#F9F9F9] border border-[#DDDDDD] rounded-[5px]
                              pl-[18px] pr-[36px] text-[14px] leading-[28px] tracking-[0.2px]
                              font-['Montserrat'] text-[#737373] appearance-none cursor-pointer outline-none"
@@ -178,8 +187,8 @@ export default function ShopPage() {
             <div className="flex items-center gap-[15px]">
               <div className="relative">
                 <select
-                  value={filter.sort}
-                  onChange={e => setFilter({ sort: e.target.value })}
+                  value={sort}
+                  onChange={e => handleSortChange(e.target.value)}
                   className="w-[141px] h-[50px] bg-[#F9F9F9] border border-[#DDDDDD] rounded-[5px]
                              pl-[18px] pr-[36px] text-[14px] leading-[28px] tracking-[0.2px]
                              font-['Montserrat'] text-[#737373] appearance-none cursor-pointer outline-none"
@@ -374,7 +383,7 @@ function ListRow({ product, dispatch }) {
             <span className="font-bold text-[16px] text-[#23856D]">${product.price.toFixed(2)}</span>
           </div>
           <button
-            onClick={() => dispatch({ type: 'ADD_TO_CART', payload: product })}
+            onClick={() => dispatch(addToCart(product))}
             className="bg-[#23A6F0] text-white border-none rounded-[5px] py-[10px] px-6
                        font-['Montserrat'] font-bold text-[14px] cursor-pointer hover:bg-[#1a8fd1] transition-colors"
           >
