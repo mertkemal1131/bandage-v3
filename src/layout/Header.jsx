@@ -1,15 +1,17 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { ShoppingCart, Heart, Search, Phone, Mail, Menu, X, ChevronDown, User } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { ShoppingCart, Heart, Search, Phone, Mail, Menu, X, ChevronDown, User, LogOut } from 'lucide-react'
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [pagesOpen, setPagesOpen] = useState(false)
   const cartCount = useSelector(s => s.cart.items.length)
   const wishCount = useSelector(s => s.wishlist.items.length)
+  const { user } = useSelector(s => s.auth)
+  const dispatch = useDispatch()
+  const location = useLocation()
 
-  // Close dropdown when clicking outside
   const pagesRef = useRef(null)
   useEffect(() => {
     function handleClickOutside(e) {
@@ -21,15 +23,30 @@ export default function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Pages dropdown items — add more here as you create new pages
-  const pagesLinks = [
-    { label: 'Team', path: '/team' },
+  // Close mobile menu on route change
+  useEffect(() => { setMenuOpen(false) }, [location.pathname])
+
+  const pagesLinks = [{ label: 'Team', path: '/team' }]
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    dispatch({ type: 'LOGOUT' })
+    setMenuOpen(false)
+  }
+
+  const mobileNavLinks = [
+    ['Home',    '/'],
+    ['Shop',    '/shop'],
+    ['About',   '/about'],
+    ['Blog',    '/blog'],
+    ['Contact', '/contact'],
+    ['Pages',   null], // handled separately as expandable
   ]
 
   return (
     <header className="w-full">
 
-      {/* Top bar — hidden on mobile */}
+      {/* ── Top bar — desktop only ─────────────────────────────────────── */}
       <div className="hidden md:flex w-full bg-[#252B42] h-[58px] items-center justify-between px-10">
         <div className="flex items-center gap-6">
           <a href="tel:2255550118" className="flex items-center gap-2 no-underline">
@@ -58,11 +75,13 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Main nav */}
+      {/* ── Main nav bar ───────────────────────────────────────────────── */}
       <nav className="w-full bg-white border-b border-[#E8E8E8] h-16 md:h-20 flex items-center justify-between px-4 md:px-10 sticky top-0 z-[100] shadow-sm">
-        <Link to="/" className="font-extrabold text-2xl md:text-[28px] text-[#252B42] no-underline shrink-0">Bandage</Link>
+        <Link to="/" className="font-extrabold text-2xl md:text-[28px] text-[#252B42] no-underline shrink-0">
+          Bandage
+        </Link>
 
-        {/* Desktop links */}
+        {/* Desktop nav links */}
         <ul className="hidden md:flex items-center gap-5 list-none m-0 p-0">
           {[['Home', '/'], ['Shop', '/shop', true], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact']].map(([label, path, arrow]) => (
             <li key={label}>
@@ -75,27 +94,17 @@ export default function Header() {
           {/* Pages dropdown */}
           <li className="relative" ref={pagesRef}>
             <button
-              onClick={() => setPagesOpen(prev => !prev)}
+              onClick={() => setPagesOpen(p => !p)}
               className="flex items-center gap-1 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer hover:text-[#252B42] transition-colors p-0"
             >
               Pages
-              <ChevronDown
-                size={14}
-                className="transition-transform duration-200"
-                style={{ transform: pagesOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-              />
+              <ChevronDown size={14} style={{ transform: pagesOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
             </button>
-
-            {/* Dropdown panel */}
             {pagesOpen && (
               <div className="absolute top-full left-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-[#E8E8E8] overflow-hidden z-[200]">
                 {pagesLinks.map(({ label, path }) => (
-                  <Link
-                    key={label}
-                    to={path}
-                    onClick={() => setPagesOpen(false)}
-                    className="block px-4 py-3 font-bold text-sm text-[#737373] no-underline hover:bg-[#F5F5F5] hover:text-[#252B42] transition-colors"
-                  >
+                  <Link key={label} to={path} onClick={() => setPagesOpen(false)}
+                    className="block px-4 py-3 font-bold text-sm text-[#737373] no-underline hover:bg-[#F5F5F5] hover:text-[#252B42] transition-colors">
                     {label}
                   </Link>
                 ))}
@@ -104,11 +113,23 @@ export default function Header() {
           </li>
         </ul>
 
-        {/* Right actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <Link to="/login" className="hidden md:flex items-center gap-1.5 px-3 py-2 font-bold text-sm text-[#23A6F0] no-underline whitespace-nowrap">
-            <User size={16} color="#23A6F0" strokeWidth={2} />Login / Register
-          </Link>
+        {/* ── Desktop right actions ── */}
+        <div className="hidden md:flex items-center gap-1 shrink-0">
+          {user ? (
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-[#252B42] flex items-center gap-1.5">
+                <User size={16} color="#23A6F0" /> {user.name}
+              </span>
+              <button onClick={handleLogout}
+                className="flex items-center gap-1 px-3 py-2 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer hover:text-[#252B42]">
+                <LogOut size={15} /> Logout
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="flex items-center gap-1.5 px-3 py-2 font-bold text-sm text-[#23A6F0] no-underline whitespace-nowrap">
+              <User size={16} color="#23A6F0" strokeWidth={2} />Login / Register
+            </Link>
+          )}
           <button className="p-2 bg-transparent border-none cursor-pointer flex items-center">
             <Search size={20} color="#23A6F0" strokeWidth={2} />
           </button>
@@ -120,20 +141,84 @@ export default function Header() {
             <Heart size={20} color="#23A6F0" strokeWidth={2} />
             {wishCount > 0 && <span className="min-w-[18px] h-[18px] rounded-full bg-[#23A6F0] text-white font-bold text-[11px] flex items-center justify-center px-1">{wishCount}</span>}
           </button>
-          {/* Hamburger — mobile only */}
-          <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden p-2 bg-transparent border-none cursor-pointer">
-            {menuOpen ? <X size={24} color="#252B42" /> : <Menu size={24} color="#252B42" />}
-          </button>
         </div>
+
+        {/* ── Mobile: hamburger only (no icons in nav bar) ── */}
+        <button
+          onClick={() => setMenuOpen(v => !v)}
+          className="md:hidden p-2 bg-transparent border-none cursor-pointer"
+          aria-label="Toggle menu"
+        >
+          {menuOpen ? <X size={24} color="#252B42" /> : <Menu size={24} color="#252B42" />}
+        </button>
       </nav>
 
-      {/* Mobile dropdown menu */}
+      {/* ── Mobile dropdown menu ───────────────────────────────────────── */}
       {menuOpen && (
-        <div className="md:hidden w-full bg-white flex flex-col items-center gap-[30px] py-[60px]">
-          {[['Home', '/'], ['Shop', '/shop'], ['Pricing', '#'], ['Contact', '/contact'], ['Team', '/team']].map(([label, path]) => (
-            <Link key={label} to={path} onClick={() => setMenuOpen(false)}
-              className="font-normal text-[30px] leading-[45px] tracking-[0.2px] text-[#737373] no-underline text-center">{label}</Link>
-          ))}
+        <div className="md:hidden w-full bg-white flex flex-col items-center py-[60px] gap-[30px] shadow-md z-[99] relative">
+
+          {/* Nav links */}
+          {[['Home', '/'], ['Shop', '/shop'], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Pages', '/team']].map(([label, path]) => {
+            const isActive = location.pathname === path
+            return (
+              <Link
+                key={label}
+                to={path}
+                onClick={() => setMenuOpen(false)}
+                className={`text-[30px] leading-[45px] tracking-[0.2px] no-underline text-center transition-colors ${
+                  isActive ? 'font-bold text-[#252B42]' : 'font-normal text-[#737373]'
+                }`}
+              >
+                {label}
+              </Link>
+            )
+          })}
+
+          {/* Divider */}
+          <div className="w-full h-[1px] bg-[#E8E8E8] mx-8" />
+
+          {/* Login/Register or logged-in user */}
+          {user ? (
+            <>
+              <span className="text-[24px] font-bold text-[#252B42] flex items-center gap-2">
+                <User size={24} color="#23A6F0" /> {user.name}
+              </span>
+              <button onClick={handleLogout}
+                className="flex items-center gap-2 text-[24px] font-bold text-[#E2462C] bg-transparent border-none cursor-pointer">
+                <LogOut size={24} /> Logout
+              </button>
+            </>
+          ) : (
+            <Link to="/login" onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2 text-[24px] font-bold text-[#23A6F0] no-underline">
+              <User size={24} color="#23A6F0" strokeWidth={2} />
+              Login / Register
+            </Link>
+          )}
+
+          {/* Action icons — search, cart, wishlist */}
+          <button className="p-0 bg-transparent border-none cursor-pointer flex items-center">
+            <Search size={28} color="#23A6F0" strokeWidth={2} />
+          </button>
+
+          <Link to="/cart" onClick={() => setMenuOpen(false)} className="flex items-center gap-1.5 no-underline">
+            <ShoppingCart size={28} color="#23A6F0" strokeWidth={2} />
+            {cartCount > 0 && (
+              <span className="min-w-[20px] h-[20px] rounded-full bg-[#23A6F0] text-white font-bold text-[12px] flex items-center justify-center px-1">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+
+          <button className="flex items-center gap-1.5 p-0 bg-transparent border-none cursor-pointer">
+            <Heart size={28} color="#23A6F0" strokeWidth={2} />
+            {wishCount > 0 && (
+              <span className="min-w-[20px] h-[20px] rounded-full bg-[#23A6F0] text-white font-bold text-[12px] flex items-center justify-center px-1">
+                {wishCount}
+              </span>
+            )}
+          </button>
+
         </div>
       )}
     </header>

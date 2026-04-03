@@ -31,7 +31,7 @@ axiosInstance.interceptors.response.use(
   (error) => {
     console.error('API Error:', error.response || error.message);
 
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config?.url?.includes("/login")) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
