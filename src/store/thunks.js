@@ -1,5 +1,6 @@
 import axiosInstance from '../api/axiosInstance';
 import { setRoles, setUser } from './clientReducer';
+import { setCategories, setFetchState, FETCH_STATES } from './productReducer';
 import { toast } from 'react-toastify';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,5 +67,24 @@ export const loginUser = (email, password, rememberMe, history) => async (dispat
     const msg = typeof raw === 'string' ? raw : 'Invalid email or password.';
     toast.error(msg);
     // Do NOT navigate — keep user on login page
+  }
+};
+// ─────────────────────────────────────────────────────────────────────────────
+// fetchCategories — thunk action creator
+// Fetches all categories from GET /categories and stores them in productReducer.
+// Skips the request if categories were already loaded (avoids redundant calls).
+// ─────────────────────────────────────────────────────────────────────────────
+export const fetchCategories = () => async (dispatch, getState) => {
+  const { categories, fetchState } = getState().product;
+  if (categories.length > 0 || fetchState === FETCH_STATES.FETCHING) return;
+
+  dispatch(setFetchState(FETCH_STATES.FETCHING));
+  try {
+    const { data } = await axiosInstance.get('/categories');
+    dispatch(setCategories(data));
+    dispatch(setFetchState(FETCH_STATES.FETCHED));
+  } catch (err) {
+    console.error('Failed to fetch categories:', err);
+    dispatch(setFetchState(FETCH_STATES.FAILED));
   }
 };

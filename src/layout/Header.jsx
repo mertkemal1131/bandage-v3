@@ -78,24 +78,40 @@ function gravatarUrl(email, size = 40) {
   return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=identicon`;
 }
 
+// ── Gender slug helper ─────────────────────────────────────────────────────
+// API returns gender as "k" (kadın) or "e" (erkek)
+function genderSlug(gender) {
+  const g = (gender ?? '').toLowerCase();
+  if (g === 'k' || g === 'kadin' || g === 'women') return 'kadin';
+  if (g === 'e' || g === 'erkek' || g === 'men')   return 'erkek';
+  return g;
+}
+
 export default function Header() {
   const [menuOpen, setMenuOpen]   = useState(false)
   const [pagesOpen, setPagesOpen] = useState(false)
+  const [shopOpen,  setShopOpen]  = useState(false)
   const location = useLocation()
 
   // ── Selectors ──────────────────────────────────────────────────────────────
-  const user      = useSelector(s => s.client.user)
-  const cartCount = useSelector(s =>
+  const user       = useSelector(s => s.client.user)
+  const cartCount  = useSelector(s =>
     s.shoppingCart.cart.reduce((sum, item) => sum + item.count, 0)
   )
-  const wishCount = useSelector(s => s.wishlist.items.length)
-  const dispatch  = useDispatch()
+  const wishCount  = useSelector(s => s.wishlist.items.length)
+  const categories = useSelector(s => s.product.categories)
+  const dispatch   = useDispatch()
+
+  const kadinCats = categories.filter(c => genderSlug(c.gender) === 'kadin')
+  const erkekCats = categories.filter(c => genderSlug(c.gender) === 'erkek')
 
   // Close Pages dropdown on outside click
   const pagesRef = useRef(null)
+  const shopRef  = useRef(null)
   useEffect(() => {
     const handler = (e) => {
       if (pagesRef.current && !pagesRef.current.contains(e.target)) setPagesOpen(false)
+      if (shopRef.current  && !shopRef.current.contains(e.target))  setShopOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -153,10 +169,68 @@ export default function Header() {
 
         {/* Desktop nav links */}
         <ul className="hidden md:flex items-center gap-5 list-none m-0 p-0">
-          {[['Home', '/'], ['Shop', '/shop', true], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact']].map(([label, path, arrow]) => (
+          <li>
+            <Link to="/" className="flex items-center gap-1 font-bold text-sm text-[#737373] no-underline hover:text-[#252B42] transition-colors">
+              Home
+            </Link>
+          </li>
+
+          {/* Shop dropdown */}
+          <li className="relative" ref={shopRef}>
+            <button
+              onClick={() => setShopOpen(p => !p)}
+              className="flex items-center gap-1 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer hover:text-[#252B42] transition-colors p-0"
+            >
+              Shop
+              <ChevronDown size={14} style={{ transform: shopOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+            </button>
+
+            {shopOpen && (
+              <div className="absolute top-full left-0 mt-3 bg-white shadow-xl border border-[#E8E8E8] rounded-sm z-[200] min-w-[280px] p-6">
+                <div className="flex gap-10">
+                  {/* Kadın column */}
+                  <div>
+                    <h4 className="font-bold text-sm text-[#252B42] mb-4 uppercase tracking-wide">Kadın</h4>
+                    <ul className="list-none m-0 p-0 flex flex-col gap-3">
+                      {kadinCats.map(cat => (
+                        <li key={cat.id}>
+                          <Link
+                            to={`/shop/${genderSlug(cat.gender)}/${cat.title.toLowerCase()}/${cat.id}`}
+                            className="font-bold text-sm text-[#737373] no-underline hover:text-[#252B42] transition-colors"
+                            onClick={() => setShopOpen(false)}
+                          >
+                            {cat.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  {/* Erkek column */}
+                  <div>
+                    <h4 className="font-bold text-sm text-[#252B42] mb-4 uppercase tracking-wide">Erkek</h4>
+                    <ul className="list-none m-0 p-0 flex flex-col gap-3">
+                      {erkekCats.map(cat => (
+                        <li key={cat.id}>
+                          <Link
+                            to={`/shop/${genderSlug(cat.gender)}/${cat.title.toLowerCase()}/${cat.id}`}
+                            className="font-bold text-sm text-[#737373] no-underline hover:text-[#252B42] transition-colors"
+                            onClick={() => setShopOpen(false)}
+                          >
+                            {cat.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </li>
+
+          {[['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact']].map(([label, path]) => (
             <li key={label}>
               <Link to={path} className="flex items-center gap-1 font-bold text-sm text-[#737373] no-underline hover:text-[#252B42] transition-colors">
-                {label}{arrow && <ChevronDown size={14} />}
+                {label}
               </Link>
             </li>
           ))}
@@ -225,7 +299,7 @@ export default function Header() {
       {/* ── Mobile dropdown menu ───────────────────────────────────────── */}
       {menuOpen && (
         <div className="md:hidden w-full bg-white flex flex-col items-center py-[60px] gap-[30px] shadow-md z-[99] relative">
-          {[['Home', '/'], ['Shop', '/shop'], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Pages', '/team']].map(([label, path]) => {
+          {[['Home', '/'], ['About', '/about'], ['Blog', '/blog'], ['Contact', '/contact'], ['Pages', '/team']].map(([label, path]) => {
             const isActive = location.pathname === path
             return (
               <Link key={label} to={path} onClick={() => setMenuOpen(false)}
@@ -236,6 +310,46 @@ export default function Header() {
               </Link>
             )
           })}
+
+          {/* Mobile Shop accordion */}
+          <button
+            onClick={() => setShopOpen(p => !p)}
+            className="flex items-center gap-2 text-[30px] leading-[45px] tracking-[0.2px] font-normal text-[#737373] bg-transparent border-none cursor-pointer"
+          >
+            Shop
+            <ChevronDown size={22} style={{ transform: shopOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+          </button>
+
+          {shopOpen && (
+            <div className="flex gap-10 px-6">
+              <div>
+                <h4 className="font-bold text-base text-[#252B42] mb-3">Kadın</h4>
+                {kadinCats.map(cat => (
+                  <Link
+                    key={cat.id}
+                    to={`/shop/${genderSlug(cat.gender)}/${cat.title.toLowerCase()}/${cat.id}`}
+                    className="block font-bold text-sm text-[#737373] no-underline mb-3 hover:text-[#252B42]"
+                    onClick={() => { setMenuOpen(false); setShopOpen(false); }}
+                  >
+                    {cat.title}
+                  </Link>
+                ))}
+              </div>
+              <div>
+                <h4 className="font-bold text-base text-[#252B42] mb-3">Erkek</h4>
+                {erkekCats.map(cat => (
+                  <Link
+                    key={cat.id}
+                    to={`/shop/${genderSlug(cat.gender)}/${cat.title.toLowerCase()}/${cat.id}`}
+                    className="block font-bold text-sm text-[#737373] no-underline mb-3 hover:text-[#252B42]"
+                    onClick={() => { setMenuOpen(false); setShopOpen(false); }}
+                  >
+                    {cat.title}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="w-full h-[1px] bg-[#E8E8E8]" />
 

@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import store from './store'
 import axiosInstance from './api/axiosInstance'
 import { setUser } from './store/clientReducer'
+import { fetchCategories } from './store/thunks'
 import Header from './layout/Header'
 import Footer from './layout/Footer'
 import PageContent from './layout/PageContent'
@@ -23,6 +24,11 @@ import SignupPage from './pages/SignupPage'
 // Separated from App so it sits inside <Provider> and can use useDispatch.
 function AppContent() {
   const dispatch = useDispatch();
+
+  // ── Categories — load once for all pages (Header dropdown, HomePage, ShopPage)
+  useEffect(() => {
+    dispatch(fetchCategories());
+  }, [dispatch]);
 
   // ── Token verify on mount ────────────────────────────────────────────────
   // Spec:
@@ -66,6 +72,7 @@ function AppContent() {
         <PageContent>
           <Switch>
             <Route exact path="/" component={HomePage} />
+            <Route path="/shop/:gender/:categoryName/:categoryId" component={ShopPage} />
             <Route path="/shop" component={ShopPage} />
             <Route path="/product/:id" component={ProductDetailPage} />
             <Route path="/cart" component={CartPage} />

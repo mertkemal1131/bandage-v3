@@ -11,6 +11,91 @@ import ProductCard from '../components/ProductCard'
 import BrandLogos from '../components/BrandLogos'
 import { products, featuredPosts } from '../data/mockData'
 
+// ── Gender slug (mirrors Header helper) ───────────────────────────────────────
+function genderSlug(gender) {
+  const g = (gender ?? '').toLowerCase()
+  if (g === 'k' || g === 'kadin' || g === 'women') return 'kadin'
+  if (g === 'e' || g === 'erkek' || g === 'men')   return 'erkek'
+  return g
+}
+
+// ── Top 5 Categories by rating ────────────────────────────────────────────────
+function TopCategories() {
+  const categories = useSelector(s => s.product.categories)
+
+  const top5 = [...categories]
+    .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    .slice(0, 5)
+
+  if (top5.length === 0) return null
+
+  return (
+    <section className="w-full bg-[#FAFAFA]">
+      <div className="max-w-[1050px] mx-auto px-4 md:px-6 py-16 flex flex-col items-center gap-10">
+        <div className="text-center">
+          <h5 className="font-bold text-sm text-[#23A6F0] m-0 uppercase tracking-widest">Featured</h5>
+          <h2 className="font-bold text-[40px] leading-[50px] text-[#252B42] m-0 mt-2">Top Categories</h2>
+          <p className="text-sm text-[#737373] m-0 mt-2 max-w-[340px] mx-auto">Browse our highest-rated collections handpicked for you</p>
+        </div>
+
+        {/* 5-card grid: 1 tall left + 2×2 right on desktop; vertical on mobile */}
+        <div className="w-full flex flex-col md:flex-row gap-[10px]">
+          {/* Left — largest card (first item) */}
+          {top5[0] && (
+            <Link
+              to={`/shop/${genderSlug(top5[0].gender)}/${top5[0].title.toLowerCase()}/${top5[0].id}`}
+              className="relative group overflow-hidden rounded-sm flex-[0_0_40%] h-[400px] md:h-auto min-h-[400px] block no-underline"
+            >
+              <img
+                src={top5[0].img}
+                alt={top5[0].title}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onError={e => { e.target.src = `https://placehold.co/600x600/23A6F0/ffffff?text=${encodeURIComponent(top5[0].title)}` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                <p className="font-bold text-xl m-0">{top5[0].title}</p>
+                <p className="text-sm opacity-80 capitalize m-0 mt-1">{genderSlug(top5[0].gender)}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <Star size={13} color="#FFCE31" fill="#FFCE31" />
+                  <span className="text-xs opacity-90">{top5[0].rating?.toFixed(1)}</span>
+                </div>
+              </div>
+            </Link>
+          )}
+
+          {/* Right — 2×2 grid */}
+          <div className="flex-1 grid grid-cols-2 gap-[10px]">
+            {top5.slice(1).map(cat => (
+              <Link
+                key={cat.id}
+                to={`/shop/${genderSlug(cat.gender)}/${cat.title.toLowerCase()}/${cat.id}`}
+                className="relative group overflow-hidden rounded-sm h-[195px] block no-underline"
+              >
+                <img
+                  src={cat.img}
+                  alt={cat.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={e => { e.target.src = `https://placehold.co/400x400/23856D/ffffff?text=${encodeURIComponent(cat.title)}` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                  <p className="font-bold text-base m-0">{cat.title}</p>
+                  <p className="text-xs opacity-80 capitalize m-0">{genderSlug(cat.gender)}</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Star size={11} color="#FFCE31" fill="#FFCE31" />
+                    <span className="text-xs opacity-90">{cat.rating?.toFixed(1)}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // ── Hero Slider ───────────────────────────────────────────────────────────────
 const heroSlides = [
   {
@@ -316,6 +401,7 @@ export default function HomePage() {
     <div className="w-full">
       <Hero />
       <BrandLogos />
+      <TopCategories />
       <FeaturedBanners />
       <Bestsellers />
       <AboutSplit />
