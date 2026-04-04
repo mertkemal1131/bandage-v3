@@ -1,6 +1,6 @@
 import axiosInstance from '../api/axiosInstance';
 import { setRoles, setUser } from './clientReducer';
-import { setCategories, setFetchState, FETCH_STATES } from './productReducer';
+import { setCategories, setFetchState, setProductList, setTotal, setSelectedProduct, FETCH_STATES } from './productReducer';
 import { toast } from 'react-toastify';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +85,43 @@ export const fetchCategories = () => async (dispatch, getState) => {
     dispatch(setFetchState(FETCH_STATES.FETCHED));
   } catch (err) {
     console.error('Failed to fetch categories:', err);
+    dispatch(setFetchState(FETCH_STATES.FAILED));
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fetchProducts — thunk action creator
+// GET /products → { total, products: [...] }
+// Sets productList and total in productReducer.
+// ─────────────────────────────────────────────────────────────────────────────
+export const fetchProducts = (params = {}) => async (dispatch) => {
+  dispatch(setFetchState(FETCH_STATES.FETCHING));
+  try {
+    const { data } = await axiosInstance.get('/products', { params });
+    // data = { total: Number, products: ProductObject[] }
+    dispatch(setProductList(data.products));
+    dispatch(setTotal(data.total));
+    dispatch(setFetchState(FETCH_STATES.FETCHED));
+  } catch (err) {
+    console.error('Failed to fetch products:', err);
+    dispatch(setFetchState(FETCH_STATES.FAILED));
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// fetchProductById — thunk action creator
+// GET /products/:productId → single ProductObject
+// Sets selectedProduct in productReducer and reuses fetchState for the spinner.
+// ─────────────────────────────────────────────────────────────────────────────
+export const fetchProductById = (productId) => async (dispatch) => {
+  dispatch(setSelectedProduct(null));                  // clear stale data immediately
+  dispatch(setFetchState(FETCH_STATES.FETCHING));
+  try {
+    const { data } = await axiosInstance.get(`/products/${productId}`);
+    dispatch(setSelectedProduct(data));
+    dispatch(setFetchState(FETCH_STATES.FETCHED));
+  } catch (err) {
+    console.error('Failed to fetch product:', err);
     dispatch(setFetchState(FETCH_STATES.FAILED));
   }
 };

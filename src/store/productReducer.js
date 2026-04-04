@@ -8,6 +8,8 @@ export const SET_FETCH_STATE  = 'product/SET_FETCH_STATE';
 export const SET_LIMIT        = 'product/SET_LIMIT';
 export const SET_OFFSET       = 'product/SET_OFFSET';
 export const SET_FILTER       = 'product/SET_FILTER';
+export const SET_SORT            = 'product/SET_SORT';
+export const SET_SELECTED_PRODUCT = 'product/SET_SELECTED_PRODUCT';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FETCH STATE CONSTANTS
@@ -29,6 +31,8 @@ export const setFetchState  = (fetchState)  => ({ type: SET_FETCH_STATE,  payloa
 export const setLimit       = (limit)       => ({ type: SET_LIMIT,        payload: limit });
 export const setOffset      = (offset)      => ({ type: SET_OFFSET,       payload: offset });
 export const setFilter      = (filter)      => ({ type: SET_FILTER,       payload: filter });
+export const setSort            = (sort)    => ({ type: SET_SORT,             payload: sort });
+export const setSelectedProduct = (product) => ({ type: SET_SELECTED_PRODUCT, payload: product });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INITIAL STATE  (spec-exact field names)
@@ -39,8 +43,10 @@ const initialState = {
   total:        0,             // Number — total product count from API
   limit:        25,            // Number — products per page (default 25)
   offset:       0,             // Number — pagination offset (default 0)
-  filter:       '',            // String — active filter/search string
-  fetchState:   'NOT_FETCHED', // String — one of FETCH_STATES
+  filter:       '',            // String — active filter/search string (committed on Filter click)
+  sort:            '',     // String — e.g. 'price:asc' | 'price:desc' | 'rating:asc' | 'rating:desc'
+  selectedProduct: null,  // Object — the product currently being viewed in ProductDetailPage
+  fetchState:      'NOT_FETCHED',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,6 +68,10 @@ export default function productReducer(state = initialState, action) {
       return { ...state, offset: action.payload };
     case SET_FILTER:
       return { ...state, filter: action.payload };
+    case SET_SORT:
+      return { ...state, sort: action.payload };
+    case SET_SELECTED_PRODUCT:
+      return { ...state, selectedProduct: action.payload };
     default:
       return state;
   }
