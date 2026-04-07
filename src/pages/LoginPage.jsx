@@ -204,10 +204,13 @@ function RegisterForm({ onSwitch }) {
       };
     }
     try {
-      await axiosInstance.post('/signup', payload);
-      toast.success('You need to click link in email to activate your account!', { autoClose: 6000 });
-      history.goBack();
-    } catch (err) {
+  await axiosInstance.post('/signup', payload);
+  toast.success(
+    '✅ Account created! Check your email and click the activation link before logging in.',
+    { autoClose: 8000 }
+  );
+  onSwitch(); // ← switch to Login tab
+} catch (err) {
       const msg = err.response?.data?.message || err.response?.data || 'Something went wrong.';
       setServerError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     }

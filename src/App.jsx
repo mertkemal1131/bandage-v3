@@ -16,9 +16,12 @@ import ProductDetailPage from './pages/ProductDetailPage'
 import LoginPage from './pages/LoginPage'
 import CartPage from './pages/CartPage'
 import AboutPage from './pages/AboutPage'
+import BlogPage from './pages/BlogPage'
 import ContactPage from './pages/ContactPage'
 import TeamPage from './pages/TeamPage'
 import SignupPage from './pages/SignupPage'
+import CreateOrderPage from './pages/CreateOrderPage'
+import ProtectedRoute from './components/ProtectedRoute'
 
 // ── AppContent ─────────────────────────────────────────────────────────────
 // Separated from App so it sits inside <Provider> and can use useDispatch.
@@ -79,9 +82,11 @@ function AppContent() {
             <Route path="/cart" component={CartPage} />
             <Route path="/login" component={LoginPage} />
             <Route path="/about" component={AboutPage} />
+            <Route path="/blog" component={BlogPage} />
             <Route path="/contact" component={ContactPage} />
             <Route path="/team" component={TeamPage} />
             <Route path="/signup" component={SignupPage} />
+            <ProtectedRoute path="/order" component={CreateOrderPage} />
           </Switch>
         </PageContent>
         <Footer />

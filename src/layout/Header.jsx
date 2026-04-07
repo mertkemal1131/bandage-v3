@@ -91,10 +91,12 @@ export default function Header() {
   const [menuOpen, setMenuOpen]   = useState(false)
   const [pagesOpen, setPagesOpen] = useState(false)
   const [shopOpen,  setShopOpen]  = useState(false)
+  const [cartOpen,  setCartOpen]  = useState(false)
   const location = useLocation()
 
   // ── Selectors ──────────────────────────────────────────────────────────────
   const user       = useSelector(s => s.client.user)
+  const cart       = useSelector(s => s.shoppingCart.cart)
   const cartCount  = useSelector(s =>
     s.shoppingCart.cart.reduce((sum, item) => sum + item.count, 0)
   )
@@ -105,13 +107,15 @@ export default function Header() {
   const kadinCats = categories.filter(c => genderSlug(c.gender) === 'kadin')
   const erkekCats = categories.filter(c => genderSlug(c.gender) === 'erkek')
 
-  // Close Pages dropdown on outside click
+  // Close dropdowns on outside click
   const pagesRef = useRef(null)
   const shopRef  = useRef(null)
+  const cartRef  = useRef(null)
   useEffect(() => {
     const handler = (e) => {
       if (pagesRef.current && !pagesRef.current.contains(e.target)) setPagesOpen(false)
       if (shopRef.current  && !shopRef.current.contains(e.target))  setShopOpen(false)
+      if (cartRef.current  && !cartRef.current.contains(e.target))  setCartOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -280,10 +284,97 @@ export default function Header() {
           <button className="p-2 bg-transparent border-none cursor-pointer flex items-center">
             <Search size={20} color="#23A6F0" strokeWidth={2} />
           </button>
-          <Link to="/cart" className="flex items-center gap-1 p-2 no-underline relative">
-            <ShoppingCart size={20} color="#23A6F0" strokeWidth={2} />
-            {cartCount > 0 && <span className="min-w-[18px] h-[18px] rounded-full bg-[#23A6F0] text-white font-bold text-[11px] flex items-center justify-center px-1">{cartCount}</span>}
-          </Link>
+          {/* Cart dropdown */}
+          <div className="relative" ref={cartRef}>
+            <button
+              onClick={() => setCartOpen(p => !p)}
+              className="flex items-center gap-1 p-2 bg-transparent border-none cursor-pointer relative"
+            >
+              <ShoppingCart size={20} color="#23A6F0" strokeWidth={2} />
+              {cartCount > 0 && (
+                <span className="min-w-[18px] h-[18px] rounded-full bg-[#23A6F0] text-white font-bold text-[11px] flex items-center justify-center px-1">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
+            {/* Cart dropdown panel */}
+            {cartOpen && (
+              <div className="absolute top-full right-0 mt-2 w-[380px] bg-white rounded-md shadow-2xl border border-[#E8E8E8] z-[200]">
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-[#E8E8E8]">
+                  <h3 className="font-bold text-[16px] text-[#252B42] m-0">
+                    Sepetim ({cartCount} Ürün)
+                  </h3>
+                </div>
+
+                {/* Item list */}
+                <div className="max-h-[320px] overflow-y-auto divide-y divide-[#F3F3F3]">
+                  {cart.length === 0 ? (
+                    <p className="text-center text-[14px] text-[#737373] py-8">Sepetiniz boş</p>
+                  ) : (
+                    cart.map(({ product, count }) => {
+                      const img = product._image
+                        ?? product.images?.[0]?.url
+                        ?? product.image
+                        ?? null;
+                      const imgSrc = img
+                        ? img.startsWith('http') ? img : `/${img}`
+                        : 'https://placehold.co/80x80/f3f3f3/bdbdbd?text=?';
+                      const price = product._price ?? product.discount_price ?? product.price ?? 0;
+                      return (
+                        <div key={product.id} className="flex items-center gap-3 px-5 py-4">
+                          {/* Product image */}
+                          <img
+                            src={imgSrc}
+                            alt={product.name}
+                            className="w-[72px] h-[72px] object-cover rounded flex-shrink-0"
+                            onError={e => { e.target.src = 'https://placehold.co/72x72/f3f3f3/bdbdbd?text=?' }}
+                          />
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-[13px] text-[#252B42] m-0 leading-[18px] line-clamp-2">
+                              {product.name}
+                            </p>
+                            <p className="font-normal text-[12px] text-[#737373] m-0 mt-1">
+                              Adet: {count}
+                            </p>
+                            <p className="font-bold text-[13px] text-[#FF6000] m-0 mt-1">
+                              {(price * count).toFixed(2)} TL
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+
+                {/* Footer buttons */}
+                {cart.length > 0 && (
+                  <div className="flex gap-3 px-5 py-4 border-t border-[#E8E8E8]">
+                    <Link
+                      to="/cart"
+                      onClick={() => setCartOpen(false)}
+                      className="flex-1 h-[44px] flex items-center justify-center border border-[#252B42]
+                                 rounded-[5px] font-bold text-[14px] text-[#252B42] no-underline
+                                 hover:bg-[#f5f5f5] transition-colors"
+                    >
+                      Sepete Git
+                    </Link>
+                    <Link
+                      to="/cart"
+                      onClick={() => setCartOpen(false)}
+                      className="flex-1 h-[44px] flex items-center justify-center bg-[#FF6000]
+                                 rounded-[5px] font-bold text-[14px] text-white no-underline
+                                 hover:bg-[#e05500] transition-colors"
+                    >
+                      Siparişi Tamamla
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <button className="flex items-center gap-1 p-2 bg-transparent border-none cursor-pointer">
             <Heart size={20} color="#23A6F0" strokeWidth={2} />
             {wishCount > 0 && <span className="min-w-[18px] h-[18px] rounded-full bg-[#23A6F0] text-white font-bold text-[11px] flex items-center justify-center px-1">{wishCount}</span>}

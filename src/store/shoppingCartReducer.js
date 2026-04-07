@@ -25,7 +25,7 @@ export const addToCart = (product) => (dispatch, getState) => {
           ? { ...item, count: item.count + 1 }
           : item
       )
-    : [...cart, { count: 1, product }];
+    : [...cart, { count: 1, checked: true, product }];
   dispatch(setCart(newCart));
 };
 
@@ -44,6 +44,24 @@ export const updateCartItemCount = (productId, count) => (dispatch, getState) =>
 
 export const clearCart = () => (dispatch) => {
   dispatch(setCart([]));
+};
+
+// Toggle the checked state of a single cart item (for order selection)
+export const toggleChecked = (productId) => (dispatch, getState) => {
+  const cart = getState().shoppingCart.cart;
+  dispatch(setCart(
+    cart.map(item =>
+      item.product.id === productId
+        ? { ...item, checked: !item.checked }
+        : item
+    )
+  ));
+};
+
+// Toggle ALL items checked/unchecked at once
+export const toggleAllChecked = (checked) => (dispatch, getState) => {
+  const cart = getState().shoppingCart.cart;
+  dispatch(setCart(cart.map(item => ({ ...item, checked }))));
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
