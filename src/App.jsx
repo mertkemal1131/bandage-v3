@@ -21,6 +21,7 @@ import ContactPage from './pages/ContactPage'
 import TeamPage from './pages/TeamPage'
 import SignupPage from './pages/SignupPage'
 import CreateOrderPage from './pages/CreateOrderPage'
+import PreviousOrdersPage from './pages/PreviousOrdersPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // ── AppContent ─────────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ function AppContent() {
             <Route path="/team" component={TeamPage} />
             <Route path="/signup" component={SignupPage} />
             <ProtectedRoute path="/order" component={CreateOrderPage} />
+            <ProtectedRoute path="/previous-orders" component={PreviousOrdersPage} />
           </Switch>
         </PageContent>
         <Footer />

@@ -92,6 +92,7 @@ export default function Header() {
   const [pagesOpen, setPagesOpen] = useState(false)
   const [shopOpen,  setShopOpen]  = useState(false)
   const [cartOpen,  setCartOpen]  = useState(false)
+  const [userOpen,  setUserOpen]  = useState(false)
   const location = useLocation()
 
   // ── Selectors ──────────────────────────────────────────────────────────────
@@ -111,11 +112,13 @@ export default function Header() {
   const pagesRef = useRef(null)
   const shopRef  = useRef(null)
   const cartRef  = useRef(null)
+  const userRef  = useRef(null)
   useEffect(() => {
     const handler = (e) => {
       if (pagesRef.current && !pagesRef.current.contains(e.target)) setPagesOpen(false)
       if (shopRef.current  && !shopRef.current.contains(e.target))  setShopOpen(false)
       if (cartRef.current  && !cartRef.current.contains(e.target))  setCartOpen(false)
+      if (userRef.current  && !userRef.current.contains(e.target))  setUserOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -262,19 +265,62 @@ export default function Header() {
         {/* Desktop right actions */}
         <div className="hidden md:flex items-center gap-1 shrink-0">
           {user ? (
-            <div className="flex items-center gap-2">
-              <img
-                src={gravatarUrl(user.email, 40)}
-                alt={user.name}
-                className="w-9 h-9 rounded-full border border-[#E8E8E8] object-cover shrink-0"
-              />
-              <span className="font-bold text-sm text-[#252B42] max-w-[120px] truncate">
-                {user.name}
-              </span>
-              <button onClick={handleLogout}
-                className="flex items-center gap-1 px-3 py-2 font-bold text-sm text-[#737373] bg-transparent border-none cursor-pointer hover:text-[#252B42]">
-                <LogOut size={15} /> Logout
+            <div className="relative" ref={userRef}>
+              {/* ── User trigger button ─────────────────────────────────── */}
+              <button
+                onClick={() => setUserOpen(p => !p)}
+                className="flex items-center gap-2 bg-transparent border-none cursor-pointer p-1 rounded-lg hover:bg-[#F5F5F5] transition-colors"
+              >
+                <img
+                  src={gravatarUrl(user.email, 40)}
+                  alt={user.name}
+                  className="w-9 h-9 rounded-full border border-[#E8E8E8] object-cover shrink-0"
+                />
+                <span className="font-bold text-sm text-[#252B42] max-w-[120px] truncate">
+                  {user.name}
+                </span>
+                <ChevronDown size={14} style={{ transform: userOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', color: '#737373' }} />
               </button>
+
+              {/* ── User dropdown ───────────────────────────────────────── */}
+              {userOpen && (
+                <div className="absolute top-full right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-[#E8E8E8] overflow-hidden z-[200]">
+                  {/* Profile header */}
+                  <div className="flex items-center gap-3 px-4 py-3 bg-[#F8F9FF] border-b border-[#E8E8E8]">
+                    <img
+                      src={gravatarUrl(user.email, 36)}
+                      alt={user.name}
+                      className="w-9 h-9 rounded-full border border-[#DDE0EE] object-cover shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-bold text-xs text-[#252B42] m-0 truncate">{user.name}</p>
+                      <p className="text-[10px] text-[#737373] m-0 truncate">{user.email}</p>
+                    </div>
+                  </div>
+
+                  {/* My Orders link */}
+                  <Link
+                    to="/previous-orders"
+                    onClick={() => setUserOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-3 font-bold text-sm text-[#252B42] no-underline hover:bg-[#F5F5F5] hover:text-[#23A6F0] transition-colors"
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                    Siparişlerim
+                  </Link>
+
+                  <div className="h-[1px] bg-[#E8E8E8] mx-3" />
+
+                  {/* Logout */}
+                  <button
+                    onClick={() => { handleLogout(); setUserOpen(false); }}
+                    className="w-full flex items-center gap-2.5 px-4 py-3 font-bold text-sm text-[#E2462C] bg-transparent border-none cursor-pointer hover:bg-[#FFF5F5] transition-colors text-left"
+                  >
+                    <LogOut size={15} /> Çıkış Yap
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Link to="/login" className="flex items-center gap-1.5 px-3 py-2 font-bold text-sm text-[#23A6F0] no-underline whitespace-nowrap">
@@ -454,6 +500,16 @@ export default function Header() {
                 />
                 <span className="text-[24px] font-bold text-[#252B42]">{user.name}</span>
               </div>
+              <Link
+                to="/previous-orders"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 text-[24px] font-bold text-[#252B42] no-underline hover:text-[#23A6F0] transition-colors"
+              >
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                Siparişlerim
+              </Link>
               <button onClick={handleLogout}
                 className="flex items-center gap-2 text-[24px] font-bold text-[#E2462C] bg-transparent border-none cursor-pointer">
                 <LogOut size={24} /> Logout
