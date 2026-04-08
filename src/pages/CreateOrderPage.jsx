@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -71,6 +71,8 @@ function StepBar({ step }) {
 
 // ── Shared: Order Summary Sidebar ──────────────────────────────────────────────
 function OrderSummary({ checkedItems, canConfirm, onConfirm, btnLabel = 'Kaydet ve Devam Et' }) {
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
   const productTotal   = checkedItems.reduce((s, { count, product: raw }) => {
     const p = normaliseProduct(raw);
     return s + getPrice(p) * count;
@@ -79,20 +81,15 @@ function OrderSummary({ checkedItems, canConfirm, onConfirm, btnLabel = 'Kaydet 
   const shippingDiscount = productTotal >= 150 ? shippingFee : 0;
   const grandTotal       = productTotal + shippingFee - shippingDiscount;
 
+  const isActive = canConfirm && termsAccepted;
+
   return (
     <div className="w-full lg:w-[296px] shrink-0 flex flex-col gap-3">
-      <button onClick={onConfirm} disabled={!canConfirm}
-        className={`w-full py-[16px] rounded-[5px] font-bold text-[16px] border-none
-          flex items-center justify-center gap-2 transition-colors
-          ${canConfirm
-            ? 'bg-[#FF6000] text-white cursor-pointer hover:bg-[#e05500]'
-            : 'bg-[#BDBDBD] text-white cursor-not-allowed'}`}>
-        {btnLabel} <ChevronRight size={18} />
-      </button>
-
       {/* Terms */}
       <div className="bg-white border border-[#E8E8E8] rounded-[5px] p-4 flex items-start gap-3">
-        <input type="checkbox" id="terms" className="mt-[3px] accent-[#FF6000] flex-shrink-0" />
+        <input type="checkbox" id="terms" checked={termsAccepted}
+          onChange={e => setTermsAccepted(e.target.checked)}
+          className="mt-[3px] accent-[#FF6000] flex-shrink-0 cursor-pointer" />
         <label htmlFor="terms" className="font-normal text-[12px] text-[#737373] cursor-pointer leading-[18px]">
           <span className="text-[#23A6F0] underline">Ön Bilgilendirme Koşulları</span>&#39;nı ve{' '}
           <span className="text-[#23A6F0] underline">Mesafeli Satış Sözleşmesi</span>&#39;ni okudum, onaylıyorum.
@@ -122,10 +119,10 @@ function OrderSummary({ checkedItems, canConfirm, onConfirm, btnLabel = 'Kaydet 
         </div>
       </div>
 
-      <button onClick={onConfirm} disabled={!canConfirm}
+      <button onClick={onConfirm} disabled={!isActive}
         className={`w-full py-[16px] rounded-[5px] font-bold text-[16px] border-none
           flex items-center justify-center gap-2 transition-colors
-          ${canConfirm
+          ${isActive
             ? 'bg-[#FF6000] text-white cursor-pointer hover:bg-[#e05500]'
             : 'bg-[#BDBDBD] text-white cursor-not-allowed'}`}>
         {btnLabel} <ChevronRight size={18} />
@@ -276,7 +273,7 @@ function AddressForm({ initial, onSave, onCancel, loading }) {
 }
 
 // ── Step 1: Address ────────────────────────────────────────────────────────────
-function AddressStep({ onNext }) {
+function AddressStep({ onNext, onReadyChange, registerNext }) {
   const dispatch    = useDispatch();
   const user        = useSelector(s => s.client.user);
   const addressList = useSelector(s => s.client.addressList);
@@ -288,6 +285,25 @@ function AddressStep({ onNext }) {
   const [shippingId,    setShippingId]    = useState(null);
   const [billingSameAs, setBillingSameAs] = useState(true);
   const [billingId,     setBillingId]     = useState(null);
+
+  // ── Shared: fetch fresh list from API and sync state ──────────────────────
+  const refreshAddresses = async (currentShippingId = shippingId, currentBillingId = billingId) => {
+    const { data: fresh } = await axiosInstance.get('/user/address');
+    dispatch(setAddressList(fresh));
+
+    // Keep selected ids valid; if the previously selected one still exists keep it,
+    // otherwise fall back to the first item (or null).
+    const ids = fresh.map(a => a.id);
+    const newShipping = ids.includes(currentShippingId)
+      ? currentShippingId
+      : (fresh[0]?.id ?? null);
+    const newBilling  = ids.includes(currentBillingId)
+      ? currentBillingId
+      : (fresh[0]?.id ?? null);
+    setShippingId(newShipping);
+    setBillingId(newBilling);
+    return fresh;
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -305,15 +321,17 @@ function AddressStep({ onNext }) {
     setFormLoading(true);
     try {
       if (editAddr?.id) {
-        const { data } = await axiosInstance.put('/user/address', { ...formData, id: editAddr.id });
-        dispatch(setAddressList(addressList.map(a => a.id === data.id ? data : a)));
+        await axiosInstance.put('/user/address', { ...formData, id: editAddr.id });
         toast.success('Adres güncellendi');
       } else {
-        const { data } = await axiosInstance.post('/user/address', formData);
-        const next = [...addressList, data];
-        dispatch(setAddressList(next));
-        if (!shippingId) setShippingId(data.id);
+        await axiosInstance.post('/user/address', formData);
         toast.success('Adres eklendi');
+      }
+      // Re-fetch so we get the real objects with correct ids and fields
+      const fresh = await refreshAddresses();
+      // If this was a new address, select the last one (most recently added)
+      if (!editAddr?.id && fresh.length > 0) {
+        setShippingId(fresh[fresh.length - 1].id);
       }
       setShowForm(false); setEditAddr(null);
     } catch { toast.error('Adres kaydedilemedi'); }
@@ -324,10 +342,11 @@ function AddressStep({ onNext }) {
     if (!window.confirm('Bu adresi silmek istiyor musunuz?')) return;
     try {
       await axiosInstance.delete(`/user/address/${id}`);
-      const next = addressList.filter(a => a.id !== id);
-      dispatch(setAddressList(next));
-      if (shippingId === id) setShippingId(next[0]?.id ?? null);
-      if (billingId  === id) setBillingId(next[0]?.id ?? null);
+      // Re-fetch to get authoritative list; pass null for the deleted id
+      await refreshAddresses(
+        shippingId === id ? null : shippingId,
+        billingId  === id ? null : billingId,
+      );
       toast.success('Adres silindi');
     } catch { toast.error('Adres silinemedi'); }
   };
@@ -340,6 +359,11 @@ function AddressStep({ onNext }) {
     const billingAddr  = billingSameAs ? shippingAddr : addressList.find(a => a.id === billingId);
     onNext({ shippingAddr, billingAddr });
   };
+
+  // Notify parent whenever ready-state changes, and keep its next-fn ref current
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onReadyChange?.(canProceed); }, [canProceed]);
+  useEffect(() => { registerNext?.(handleNext); });
 
   return (
     <div className="flex flex-col gap-4">
@@ -413,15 +437,6 @@ function AddressStep({ onNext }) {
         </div>
       )}
 
-      {/* Mobile next button */}
-      <button onClick={handleNext} disabled={!canProceed}
-        className={`lg:hidden w-full py-[14px] rounded-[5px] font-bold text-[15px]
-          border-none flex items-center justify-center gap-2 transition-colors
-          ${canProceed
-            ? 'bg-[#FF6000] text-white cursor-pointer hover:bg-[#e05500]'
-            : 'bg-[#BDBDBD] text-white cursor-not-allowed'}`}>
-        Kaydet ve Devam Et <ChevronRight size={16} />
-      </button>
     </div>
   );
 }
@@ -470,6 +485,8 @@ function SavedCardTile({ card, selected, onSelect }) {
 }
 
 // ── Step 2: Payment ────────────────────────────────────────────────────────────
+const EMPTY_CARD_FORM = { card_no:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'' };
+
 function PaymentStep({ onBack, onComplete, addressData }) {
   const dispatch = useDispatch();
   const checkedItems = useSelector(s => s.shoppingCart.cart.filter(i => i.checked));
@@ -486,67 +503,114 @@ function PaymentStep({ onBack, onComplete, addressData }) {
   // ── Card list state ──────────────────────────────────────────────────────────
   const [cards,        setCards]        = useState([]);
   const [cardsLoading, setCardsLoading] = useState(true);
-  const [selectedCard, setSelectedCard] = useState(null);  // card id
+  const [selectedCard, setSelectedCard] = useState(null);
 
-  // ── New card form ────────────────────────────────────────────────────────────
-  const [showNewForm, setShowNewForm]   = useState(false);
-  const [newCard,     setNewCard]       = useState({
-    card_no:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'',
-  });
-  const [formErrors,  setFormErrors]   = useState({});
-  const [formLoading, setFormLoading]  = useState(false);
+  // ── Card form state (add & edit share the same form) ─────────────────────────
+  const [showForm,    setShowForm]    = useState(false);
+  const [editCardId,  setEditCardId]  = useState(null);   // null = new, id = edit
+  const [cardForm,    setCardForm]    = useState(EMPTY_CARD_FORM);
+  const [formErrors,  setFormErrors]  = useState({});
+  const [formLoading, setFormLoading] = useState(false);
 
   // ── Other ─────────────────────────────────────────────────────────────────────
-  const [use3D,        setUse3D]       = useState(false);
-  const [submitting,   setSubmitting]  = useState(false);
+  const [use3D,      setUse3D]      = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const setF = (f, v) => setNewCard(p => ({ ...p, [f]: v }));
+  const setF = (f, v) => setCardForm(p => ({ ...p, [f]: v }));
 
-  // ── Fetch saved cards ─────────────────────────────────────────────────────────
+  // ── Helpers: open form ────────────────────────────────────────────────────────
+  const openNewForm = () => {
+    setEditCardId(null);
+    setCardForm(EMPTY_CARD_FORM);
+    setFormErrors({});
+    setShowForm(true);
+  };
+
+  const openEditForm = (card) => {
+    setEditCardId(card.id);
+    setCardForm({
+      card_no:      String(card.card_no),
+      name_on_card: card.name_on_card ?? '',
+      expire_month: String(card.expire_month),
+      expire_year:  String(card.expire_year),
+      cvv: '',  // CVV is never pre-filled for security
+    });
+    setFormErrors({});
+    setShowForm(true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditCardId(null);
+    setCardForm(EMPTY_CARD_FORM);
+    setFormErrors({});
+  };
+
+  // ── Re-fetch cards and sync selection ────────────────────────────────────────
+  const refreshCards = async (keepId = selectedCard) => {
+    const { data: fresh } = await axiosInstance.get('/user/card');
+    setCards(fresh);
+    const ids = fresh.map(c => c.id);
+    setSelectedCard(ids.includes(keepId) ? keepId : (fresh[0]?.id ?? null));
+    return fresh;
+  };
+
+  // ── Fetch saved cards on mount ────────────────────────────────────────────────
   useEffect(() => {
     setCardsLoading(true);
     axiosInstance.get('/user/card')
       .then(({ data }) => {
         setCards(data);
         if (data.length > 0) setSelectedCard(data[0].id);
+        else openNewForm();   // no saved cards → go straight to new-card form
       })
-      .catch(() => {
-        // API may return empty / error — gracefully degrade to new-card form
-        setShowNewForm(true);
-      })
+      .catch(() => openNewForm())
       .finally(() => setCardsLoading(false));
-  }, []);
+  }, []); // eslint-disable-line
 
-  // ── Add new card ──────────────────────────────────────────────────────────────
-  const validateNew = () => {
+  // ── Validate form ─────────────────────────────────────────────────────────────
+  const validate = () => {
     const e = {};
-    const digits = newCard.card_no.replace(/\s/g,'');
-    if (digits.length < 16)             e.card_no        = 'Geçerli kart numarası girin';
-    if (!newCard.name_on_card.trim())    e.name_on_card   = 'Kart sahibi adı gerekli';
-    if (!newCard.expire_month)           e.expire_month   = 'Ay seçin';
-    if (!newCard.expire_year)            e.expire_year    = 'Yıl seçin';
-    if (!/^\d{3,4}$/.test(newCard.cvv)) e.cvv            = '3-4 hane';
+    const digits = cardForm.card_no.replace(/\s/g,'');
+    if (digits.length < 16)               e.card_no      = 'Geçerli kart numarası girin';
+    if (!cardForm.name_on_card.trim())     e.name_on_card = 'Kart sahibi adı gerekli';
+    if (!cardForm.expire_month)            e.expire_month = 'Ay seçin';
+    if (!cardForm.expire_year)             e.expire_year  = 'Yıl seçin';
+    // CVV required only for new cards
+    if (!editCardId && !/^\d{3,4}$/.test(cardForm.cvv)) e.cvv = '3-4 hane';
     return e;
   };
 
+  // ── Save card (POST or PUT) ───────────────────────────────────────────────────
   const handleSaveCard = async () => {
-    const e = validateNew();
+    const e = validate();
     if (Object.keys(e).length) { setFormErrors(e); return; }
     setFormLoading(true);
     try {
       const payload = {
-        card_no:       newCard.card_no.replace(/\s/g,''),
-        expire_month:  Number(newCard.expire_month),
-        expire_year:   Number(newCard.expire_year),
-        name_on_card:  newCard.name_on_card,
+        card_no:      cardForm.card_no.replace(/\s/g,''),
+        expire_month: Number(cardForm.expire_month),
+        expire_year:  Number(cardForm.expire_year),
+        name_on_card: cardForm.name_on_card,
       };
-      const { data } = await axiosInstance.post('/user/card', payload);
-      const updated = [...cards, data];
-      setCards(updated);
-      setSelectedCard(data.id);
-      setShowNewForm(false);
-      setNewCard({ card_no:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'' });
-      toast.success('Kart kaydedildi');
+
+      if (editCardId) {
+        // PUT — update existing card
+        await axiosInstance.put('/user/card', { ...payload, id: editCardId });
+        toast.success('Kart güncellendi');
+        const fresh = await refreshCards(editCardId);
+        // Stay on saved-card view, select the updated card
+        setSelectedCard(editCardId);
+        if (!fresh.find(c => c.id === editCardId)) setSelectedCard(fresh[0]?.id ?? null);
+      } else {
+        // POST — add new card
+        await axiosInstance.post('/user/card', payload);
+        toast.success('Kart kaydedildi');
+        const fresh = await refreshCards();
+        // Select the newly added card (last in list)
+        if (fresh.length > 0) setSelectedCard(fresh[fresh.length - 1].id);
+      }
+      closeForm();
     } catch {
       toast.error('Kart kaydedilemedi');
     } finally {
@@ -559,9 +623,8 @@ function PaymentStep({ onBack, onComplete, addressData }) {
     if (!window.confirm('Bu kartı silmek istiyor musunuz?')) return;
     try {
       await axiosInstance.delete(`/user/card/${cardId}`);
-      const next = cards.filter(c => c.id !== cardId);
-      setCards(next);
-      if (selectedCard === cardId) setSelectedCard(next[0]?.id ?? null);
+      const fresh = await refreshCards(selectedCard === cardId ? null : selectedCard);
+      if (fresh.length === 0) openNewForm();
       toast.success('Kart silindi');
     } catch {
       toast.error('Kart silinemedi');
@@ -569,20 +632,15 @@ function PaymentStep({ onBack, onComplete, addressData }) {
   };
 
   // ── Submit order ──────────────────────────────────────────────────────────────
-  const canPay = selectedCard || showNewForm;
+  const canPay = !showForm && !!selectedCard;
 
   const handleSubmit = () => {
     if (!canPay) { toast.warning('Lütfen bir kart seçin'); return; }
-    if (showNewForm) {
-      // Validate form first, then save & proceed
-      const e = validateNew();
-      if (Object.keys(e).length) { setFormErrors(e); return; }
-    }
     setSubmitting(true);
     const chosen = cards.find(c => c.id === selectedCard);
     dispatch(setPayment({
-      card_no:      chosen ? String(chosen.card_no).slice(-4) : newCard.card_no.slice(-4),
-      name_on_card: chosen?.name_on_card ?? newCard.name_on_card,
+      card_no:      chosen ? String(chosen.card_no).slice(-4) : '',
+      name_on_card: chosen?.name_on_card ?? '',
       use3D,
     }));
     setTimeout(() => { setSubmitting(false); onComplete(); }, 600);
@@ -655,15 +713,15 @@ function PaymentStep({ onBack, onComplete, addressData }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-[16px] text-[#252B42] m-0">Kart Bilgileri</h3>
-              {!showNewForm && cards.length > 0 && (
-                <button onClick={() => setShowNewForm(true)}
+              {!showForm && cards.length > 0 && (
+                <button onClick={openNewForm}
                   className="font-bold text-[13px] text-[#252B42] underline bg-transparent
                              border-none cursor-pointer hover:text-[#FF6000] transition-colors">
                   Başka bir Kart ile Ödeme Yap
                 </button>
               )}
-              {showNewForm && cards.length > 0 && (
-                <button onClick={() => { setShowNewForm(false); setFormErrors({}); }}
+              {showForm && cards.length > 0 && (
+                <button onClick={closeForm}
                   className="font-bold text-[13px] text-[#252B42] underline bg-transparent
                              border-none cursor-pointer hover:text-[#FF6000] transition-colors">
                   Kayıtlı kartımla ödeme yap
@@ -679,9 +737,8 @@ function PaymentStep({ onBack, onComplete, addressData }) {
             )}
 
             {/* ── Saved card tiles ────────────────────────────────────────── */}
-            {!cardsLoading && !showNewForm && cards.length > 0 && (
+            {!cardsLoading && !showForm && cards.length > 0 && (
               <div className="flex flex-col gap-4">
-                {/* Group cards with radio label + tile */}
                 {cards.map(c => (
                   <div key={c.id}>
                     <div className="flex items-center justify-between mb-1">
@@ -695,11 +752,18 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                           {c.name_on_card} kartım
                         </span>
                       </label>
-                      <button onClick={() => handleDeleteCard(c.id)}
-                        className="p-1 bg-transparent border-none cursor-pointer
-                                   text-[#BDBDBD] hover:text-[#E74040] transition-colors">
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => openEditForm(c)}
+                          className="p-1 bg-transparent border-none cursor-pointer
+                                     text-[#BDBDBD] hover:text-[#23A6F0] transition-colors">
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteCard(c.id)}
+                          className="p-1 bg-transparent border-none cursor-pointer
+                                     text-[#BDBDBD] hover:text-[#E74040] transition-colors">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
                     <SavedCardTile
                       card={c}
@@ -711,8 +775,8 @@ function PaymentStep({ onBack, onComplete, addressData }) {
               </div>
             )}
 
-            {/* ── New card form ────────────────────────────────────────────── */}
-            {!cardsLoading && (showNewForm || cards.length === 0) && (
+            {/* ── Add / Edit card form ─────────────────────────────────────── */}
+            {!cardsLoading && showForm && (
               <div className="flex flex-col gap-4">
                 {/* Card number */}
                 <div>
@@ -721,9 +785,8 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                   </label>
                   <input
                     type="text" inputMode="numeric"
-                    value={newCard.card_no}
+                    value={cardForm.card_no}
                     onChange={e => setF('card_no', formatCardNum(e.target.value))}
-                    placeholder=""
                     maxLength={19}
                     className={inputCls(formErrors.card_no)}
                   />
@@ -739,7 +802,7 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                   </label>
                   <input
                     type="text"
-                    value={newCard.name_on_card}
+                    value={cardForm.name_on_card}
                     onChange={e => setF('name_on_card', e.target.value)}
                     placeholder="Ad Soyad"
                     className={inputCls(formErrors.name_on_card)}
@@ -757,7 +820,7 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                     </label>
                     <div className="flex gap-3">
                       <div className="flex-1">
-                        <select value={newCard.expire_month}
+                        <select value={cardForm.expire_month}
                           onChange={e => setF('expire_month', e.target.value)}
                           className={selCls(formErrors.expire_month)}>
                           <option value="">Ay</option>
@@ -768,7 +831,7 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                         )}
                       </div>
                       <div className="flex-1">
-                        <select value={newCard.expire_year}
+                        <select value={cardForm.expire_year}
                           onChange={e => setF('expire_year', e.target.value)}
                           className={selCls(formErrors.expire_year)}>
                           <option value="">Yıl</option>
@@ -781,36 +844,46 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                     </div>
                   </div>
 
-                  {/* CVV */}
-                  <div className="w-[140px]">
-                    <label className="font-normal text-[14px] text-[#252B42] block mb-2">
-                      CVV
-                      <span className="ml-1 text-[#FF6000] font-bold cursor-help" title="Kartınızın arkasındaki 3-4 haneli güvenlik kodu">ⓘ</span>
-                    </label>
-                    <input
-                      type="text" inputMode="numeric"
-                      value={newCard.cvv}
-                      onChange={e => setF('cvv', e.target.value.replace(/\D/g,'').slice(0,4))}
-                      maxLength={4}
-                      className={inputCls(formErrors.cvv)}
-                    />
-                    {formErrors.cvv && (
-                      <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.cvv}</p>
-                    )}
-                  </div>
+                  {/* CVV — only for new cards */}
+                  {!editCardId && (
+                    <div className="w-[140px]">
+                      <label className="font-normal text-[14px] text-[#252B42] block mb-2">
+                        CVV
+                        <span className="ml-1 text-[#FF6000] font-bold cursor-help"
+                          title="Kartınızın arkasındaki 3-4 haneli güvenlik kodu">ⓘ</span>
+                      </label>
+                      <input
+                        type="text" inputMode="numeric"
+                        value={cardForm.cvv}
+                        onChange={e => setF('cvv', e.target.value.replace(/\D/g,'').slice(0,4))}
+                        maxLength={4}
+                        className={inputCls(formErrors.cvv)}
+                      />
+                      {formErrors.cvv && (
+                        <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.cvv}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                {/* Save card button */}
-                {showNewForm && cards.length > 0 && (
+                {/* Form action buttons */}
+                <div className="flex items-center gap-3">
                   <button onClick={handleSaveCard} disabled={formLoading}
-                    className="self-start px-5 py-2 bg-[#FF6000] text-white rounded-[5px]
+                    className="px-5 py-2 bg-[#FF6000] text-white rounded-[5px]
                                font-bold text-[13px] border-none cursor-pointer
                                hover:bg-[#e05500] transition-colors flex items-center gap-2
                                disabled:opacity-60 disabled:cursor-not-allowed">
                     {formLoading && <Loader2 size={13} className="animate-spin" />}
-                    Kartı Kaydet
+                    {editCardId ? 'Güncelle' : 'Kartı Kaydet'}
                   </button>
-                )}
+                  {cards.length > 0 && (
+                    <button onClick={closeForm}
+                      className="px-5 py-2 border border-[#BDBDBD] rounded-[5px] font-bold text-[13px]
+                                 text-[#737373] bg-white cursor-pointer hover:border-[#252B42] transition-colors">
+                      İptal
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -842,7 +915,6 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                 </tr>
               </thead>
               <tbody>
-                {/* Single payment — always available */}
                 <tr className="border-b border-[#F5F5F5]">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
@@ -857,7 +929,6 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                     {grandTotal.toFixed(2)} TL
                   </td>
                 </tr>
-                {/* Placeholder installment rows */}
                 {[2, 3, 6].map(n => (
                   <tr key={n} className="border-b border-[#F5F5F5] opacity-40">
                     <td className="px-4 py-3">
@@ -906,7 +977,9 @@ export default function CreateOrderPage() {
   const checkedItems = cart.filter(i => i.checked);
 
   const [step,          setStep]          = useState(1);
-  const [addressData,   setAddressData]   = useState(null); // set when step 1 completes
+  const [addressData,   setAddressData]   = useState(null);
+  const [addressReady,  setAddressReady]  = useState(false);
+  const addressNextRef = useRef(null);
 
   // step 1 → 2
   const handleAddressNext = (data) => {
@@ -918,14 +991,8 @@ export default function CreateOrderPage() {
   // step 2 complete
   const handleComplete = () => {
     toast.success('Siparişiniz alındı! Teşekkürler 🎉');
-    // Navigate to home or order confirmation page
     history.push('/');
   };
-
-  // Sidebar confirm action depends on step
-  const sidebarConfirm = step === 1
-    ? () => {} // step 1 confirm is triggered by the AddressStep internally via onNext
-    : handleComplete;
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-['Montserrat']">
@@ -956,7 +1023,11 @@ export default function CreateOrderPage() {
           {/* ── Left: current step content ───────────────────────────────── */}
           <div className="flex-1 min-w-0">
             {step === 1 && (
-              <AddressStep onNext={handleAddressNext} />
+              <AddressStep
+                onNext={handleAddressNext}
+                onReadyChange={setAddressReady}
+                registerNext={fn => { addressNextRef.current = fn; }}
+              />
             )}
             {step === 2 && (
               <PaymentStep
@@ -970,9 +1041,9 @@ export default function CreateOrderPage() {
           {/* ── Right: Order Summary ──────────────────────────────────────── */}
           <OrderSummary
             checkedItems={checkedItems}
-            canConfirm={step === 2}
+            canConfirm={step === 1 ? addressReady : true}
             onConfirm={step === 1
-              ? () => toast.info('Önce teslimat adresinizi seçin')
+              ? () => addressNextRef.current?.()
               : handleComplete}
             btnLabel={step === 1 ? 'Kaydet ve Devam Et' : 'Ödeme Yap'}
           />
