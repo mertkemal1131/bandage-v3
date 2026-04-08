@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import axiosInstance from '../api/axiosInstance';
 import { setAddressList } from '../store/clientReducer';
-import { setPayment } from '../store/shoppingCartReducer';
+import { setPayment, clearCart } from '../store/shoppingCartReducer';
 import { normaliseProduct } from '../components/ProductCard';
 
 // ── Turkish cities ─────────────────────────────────────────────────────────────
@@ -466,7 +466,7 @@ function SavedCardTile({ card, selected, onSelect }) {
       {/* Bank logo area */}
       <div className="flex items-center justify-between mb-4">
         <span className="font-bold text-[13px] text-[#252B42]">
-          {card.name_on_card?.split(' ')[0] || 'Kartım'}
+          {card.card_label || card.name_on_card?.split(' ')[0] || 'Kartım'}
         </span>
         {/* Mastercard icon placeholder */}
         <div className="flex">
@@ -485,9 +485,9 @@ function SavedCardTile({ card, selected, onSelect }) {
 }
 
 // ── Step 2: Payment ────────────────────────────────────────────────────────────
-const EMPTY_CARD_FORM = { card_no:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'' };
+const EMPTY_CARD_FORM = { card_no:'', card_label:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'' };
 
-function PaymentStep({ onBack, onComplete, addressData }) {
+function PaymentStep({ onBack, onComplete, addressData, registerSubmit }) {
   const dispatch = useDispatch();
   const checkedItems = useSelector(s => s.shoppingCart.cart.filter(i => i.checked));
 
@@ -530,10 +530,11 @@ function PaymentStep({ onBack, onComplete, addressData }) {
     setEditCardId(card.id);
     setCardForm({
       card_no:      String(card.card_no),
+      card_label:   card.card_label ?? '',
       name_on_card: card.name_on_card ?? '',
       expire_month: String(card.expire_month),
       expire_year:  String(card.expire_year),
-      cvv: '',  // CVV is never pre-filled for security
+      cvv: '',
     });
     setFormErrors({});
     setShowForm(true);
@@ -634,17 +635,44 @@ function PaymentStep({ onBack, onComplete, addressData }) {
   // ── Submit order ──────────────────────────────────────────────────────────────
   const canPay = !showForm && !!selectedCard;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canPay) { toast.warning('Lütfen bir kart seçin'); return; }
-    setSubmitting(true);
     const chosen = cards.find(c => c.id === selectedCard);
-    dispatch(setPayment({
-      card_no:      chosen ? String(chosen.card_no).slice(-4) : '',
-      name_on_card: chosen?.name_on_card ?? '',
-      use3D,
-    }));
-    setTimeout(() => { setSubmitting(false); onComplete(); }, 600);
+    if (!chosen) return;
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        address_id:        addressData.shippingAddr?.id,
+        order_date:        new Date().toISOString().slice(0, 19),
+        card_no:           Number(String(chosen.card_no).replace(/\s/g, '')),
+        card_name:         chosen.name_on_card,
+        card_expire_month: chosen.expire_month,
+        card_expire_year:  chosen.expire_year,
+        card_ccv:          use3D ? 1 : 0,  // CCV not stored; placeholder
+        price:             grandTotal,
+        products: checkedItems.map(({ count, product: raw }) => {
+          const p = normaliseProduct(raw);
+          return {
+            product_id: p.id,
+            count,
+            detail: `${p.name ?? ''}`,
+          };
+        }),
+      };
+
+      await axiosInstance.post('/order', payload);
+      dispatch(clearCart());
+      onComplete();
+    } catch {
+      toast.error('Sipariş oluşturulamadı. Lütfen tekrar deneyin.');
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  // Keep parent's submit ref current so sidebar button always calls latest fn
+  useEffect(() => { registerSubmit?.(handleSubmit); });
 
   // ── Input / select CSS helpers ────────────────────────────────────────────────
   const inputCls = (err) =>
@@ -749,7 +777,7 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                           className="accent-[#FF6000] w-[16px] h-[16px]" />
                         <span className={`font-bold text-[13px] transition-colors
                           ${selectedCard === c.id ? 'text-[#FF6000]' : 'text-[#737373]'}`}>
-                          {c.name_on_card} kartım
+                          {c.card_label || c.name_on_card} kartım
                         </span>
                       </label>
                       <div className="flex items-center gap-1">
@@ -793,6 +821,20 @@ function PaymentStep({ onBack, onComplete, addressData }) {
                   {formErrors.card_no && (
                     <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.card_no}</p>
                   )}
+                </div>
+
+                {/* Card label (nickname) */}
+                <div>
+                  <label className="font-normal text-[14px] text-[#252B42] block mb-2">
+                    Kart Adı <span className="text-[#BDBDBD] font-normal text-[12px]">(isteğe bağlı, ör: İş Kartım)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={cardForm.card_label}
+                    onChange={e => setF('card_label', e.target.value)}
+                    placeholder="İş Kartım, Bonus Kartım…"
+                    className={inputCls(false)}
+                  />
                 </div>
 
                 {/* Name on card */}
@@ -979,7 +1021,8 @@ export default function CreateOrderPage() {
   const [step,          setStep]          = useState(1);
   const [addressData,   setAddressData]   = useState(null);
   const [addressReady,  setAddressReady]  = useState(false);
-  const addressNextRef = useRef(null);
+  const addressNextRef  = useRef(null);
+  const paymentSubmitRef = useRef(null);
 
   // step 1 → 2
   const handleAddressNext = (data) => {
@@ -988,9 +1031,9 @@ export default function CreateOrderPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // step 2 complete
+  // called by PaymentStep after successful POST /order
   const handleComplete = () => {
-    toast.success('Siparişiniz alındı! Teşekkürler 🎉');
+    toast.success('🎉 Siparişiniz başarıyla oluşturuldu! Teşekkürler.');
     history.push('/');
   };
 
@@ -1034,6 +1077,7 @@ export default function CreateOrderPage() {
                 onBack={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 onComplete={handleComplete}
                 addressData={addressData}
+                registerSubmit={fn => { paymentSubmitRef.current = fn; }}
               />
             )}
           </div>
@@ -1044,7 +1088,7 @@ export default function CreateOrderPage() {
             canConfirm={step === 1 ? addressReady : true}
             onConfirm={step === 1
               ? () => addressNextRef.current?.()
-              : handleComplete}
+              : () => paymentSubmitRef.current?.()}
             btnLabel={step === 1 ? 'Kaydet ve Devam Et' : 'Ödeme Yap'}
           />
         </div>
