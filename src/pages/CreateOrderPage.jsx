@@ -426,168 +426,459 @@ function AddressStep({ onNext }) {
   );
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+// Mask card number: "5421 19** **** 5420"
+function maskCard(no) {
+  const d = String(no).replace(/\s/g, '');
+  if (d.length < 8) return d;
+  return `${d.slice(0,4)} ${d.slice(4,6)}** **** ${d.slice(-4)}`;
+}
+
+// Format card number input with spaces every 4 digits
+function formatCardNum(val) {
+  return val.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
+}
+
+// ── SavedCardTile ──────────────────────────────────────────────────────────────
+function SavedCardTile({ card, selected, onSelect }) {
+  return (
+    <div
+      onClick={onSelect}
+      className={`relative rounded-[8px] p-4 cursor-pointer transition-all min-w-[180px] w-[220px]
+        border-2 ${selected ? 'border-[#FF6000]' : 'border-[#E8E8E8] hover:border-[#BDBDBD]'}`}
+      style={{ background: selected ? '#FFF8F3' : '#fff' }}
+    >
+      {/* Bank logo area */}
+      <div className="flex items-center justify-between mb-4">
+        <span className="font-bold text-[13px] text-[#252B42]">
+          {card.name_on_card?.split(' ')[0] || 'Kartım'}
+        </span>
+        {/* Mastercard icon placeholder */}
+        <div className="flex">
+          <div className="w-[20px] h-[20px] rounded-full bg-[#EB001B] opacity-90 -mr-2" />
+          <div className="w-[20px] h-[20px] rounded-full bg-[#F79E1B] opacity-90" />
+        </div>
+      </div>
+      <p className="font-mono text-[13px] text-[#252B42] m-0 mb-1">
+        {maskCard(card.card_no)}
+      </p>
+      <p className="font-normal text-[12px] text-[#737373] m-0">
+        {card.expire_month}/{card.expire_year}
+      </p>
+    </div>
+  );
+}
+
 // ── Step 2: Payment ────────────────────────────────────────────────────────────
-function PaymentStep({ onBack, onComplete }) {
+function PaymentStep({ onBack, onComplete, addressData }) {
   const dispatch = useDispatch();
-  const [card, setCard] = useState(EMPTY_CARD);
-  const [errors, setErrors] = useState({});
-  const [submitting, setSubmitting] = useState(false);
+  const checkedItems = useSelector(s => s.shoppingCart.cart.filter(i => i.checked));
 
-  const set = (f, v) => setCard(p => ({ ...p, [f]: v }));
+  // Grand total for installment table
+  const productTotal = checkedItems.reduce((s, { count, product: raw }) => {
+    const p = normaliseProduct(raw);
+    return s + getPrice(p) * count;
+  }, 0);
+  const shippingFee      = checkedItems.length > 0 ? 29.99 : 0;
+  const shippingDiscount = productTotal >= 150 ? shippingFee : 0;
+  const grandTotal       = productTotal + shippingFee - shippingDiscount;
 
-  // Format card number: add a space every 4 digits
-  const formatCardNum = (val) =>
-    val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+  // ── Card list state ──────────────────────────────────────────────────────────
+  const [cards,        setCards]        = useState([]);
+  const [cardsLoading, setCardsLoading] = useState(true);
+  const [selectedCard, setSelectedCard] = useState(null);  // card id
 
-  const validate = () => {
+  // ── New card form ────────────────────────────────────────────────────────────
+  const [showNewForm, setShowNewForm]   = useState(false);
+  const [newCard,     setNewCard]       = useState({
+    card_no:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'',
+  });
+  const [formErrors,  setFormErrors]   = useState({});
+  const [formLoading, setFormLoading]  = useState(false);
+
+  // ── Other ─────────────────────────────────────────────────────────────────────
+  const [use3D,        setUse3D]       = useState(false);
+  const [submitting,   setSubmitting]  = useState(false);
+
+  const setF = (f, v) => setNewCard(p => ({ ...p, [f]: v }));
+
+  // ── Fetch saved cards ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    setCardsLoading(true);
+    axiosInstance.get('/user/card')
+      .then(({ data }) => {
+        setCards(data);
+        if (data.length > 0) setSelectedCard(data[0].id);
+      })
+      .catch(() => {
+        // API may return empty / error — gracefully degrade to new-card form
+        setShowNewForm(true);
+      })
+      .finally(() => setCardsLoading(false));
+  }, []);
+
+  // ── Add new card ──────────────────────────────────────────────────────────────
+  const validateNew = () => {
     const e = {};
-    const digits = card.cardNumber.replace(/\s/g, '');
-    if (digits.length < 16)          e.cardNumber = 'Geçerli kart numarası girin (16 hane)';
-    if (!card.cardName.trim())        e.cardName   = 'Kart üzerindeki isim gerekli';
-    if (!card.expMonth)               e.expMonth   = 'Ay seçin';
-    if (!card.expYear)                e.expYear    = 'Yıl seçin';
-    if (!/^\d{3,4}$/.test(card.cvv)) e.cvv        = 'CVV 3-4 haneli olmalı';
+    const digits = newCard.card_no.replace(/\s/g,'');
+    if (digits.length < 16)             e.card_no        = 'Geçerli kart numarası girin';
+    if (!newCard.name_on_card.trim())    e.name_on_card   = 'Kart sahibi adı gerekli';
+    if (!newCard.expire_month)           e.expire_month   = 'Ay seçin';
+    if (!newCard.expire_year)            e.expire_year    = 'Yıl seçin';
+    if (!/^\d{3,4}$/.test(newCard.cvv)) e.cvv            = '3-4 hane';
     return e;
   };
 
-  const handleSubmit = () => {
-    const e = validate();
-    if (Object.keys(e).length) { setErrors(e); return; }
-    setSubmitting(true);
-    // Store payment info in Redux (no API call yet — next task)
-    dispatch(setPayment({
-      cardNumber: card.cardNumber.replace(/\s/g, '').slice(-4), // only last 4 for security
-      cardName:   card.cardName,
-      expMonth:   card.expMonth,
-      expYear:    card.expYear,
-    }));
-    setTimeout(() => {
-      setSubmitting(false);
-      onComplete();
-    }, 600);
+  const handleSaveCard = async () => {
+    const e = validateNew();
+    if (Object.keys(e).length) { setFormErrors(e); return; }
+    setFormLoading(true);
+    try {
+      const payload = {
+        card_no:       newCard.card_no.replace(/\s/g,''),
+        expire_month:  Number(newCard.expire_month),
+        expire_year:   Number(newCard.expire_year),
+        name_on_card:  newCard.name_on_card,
+      };
+      const { data } = await axiosInstance.post('/user/card', payload);
+      const updated = [...cards, data];
+      setCards(updated);
+      setSelectedCard(data.id);
+      setShowNewForm(false);
+      setNewCard({ card_no:'', name_on_card:'', expire_month:'', expire_year:'', cvv:'' });
+      toast.success('Kart kaydedildi');
+    } catch {
+      toast.error('Kart kaydedilemedi');
+    } finally {
+      setFormLoading(false);
+    }
   };
 
-  const F = ({ label, field, err, children }) => (
-    <div className="flex flex-col gap-1">
-      <label className="font-bold text-[12px] text-[#252B42]">{label}</label>
-      {children}
-      {err && <span className="text-[11px] text-[#E74040]">{err}</span>}
-    </div>
-  );
+  // ── Delete card ───────────────────────────────────────────────────────────────
+  const handleDeleteCard = async (cardId) => {
+    if (!window.confirm('Bu kartı silmek istiyor musunuz?')) return;
+    try {
+      await axiosInstance.delete(`/user/card/${cardId}`);
+      const next = cards.filter(c => c.id !== cardId);
+      setCards(next);
+      if (selectedCard === cardId) setSelectedCard(next[0]?.id ?? null);
+      toast.success('Kart silindi');
+    } catch {
+      toast.error('Kart silinemedi');
+    }
+  };
 
-  const inputCls = (hasErr) =>
-    `border rounded-[5px] px-3 py-[10px] text-[14px] font-['Montserrat'] outline-none
-     transition-colors w-full ${hasErr ? 'border-[#E74040]' : 'border-[#E8E8E8] focus:border-[#FF6000]'}`;
+  // ── Submit order ──────────────────────────────────────────────────────────────
+  const canPay = selectedCard || showNewForm;
 
-  const selCls = (hasErr) =>
-    `border rounded-[5px] px-3 py-[10px] text-[14px] font-['Montserrat'] outline-none
-     bg-white appearance-none transition-colors w-full
-     ${hasErr ? 'border-[#E74040]' : 'border-[#E8E8E8] focus:border-[#FF6000]'}`;
+  const handleSubmit = () => {
+    if (!canPay) { toast.warning('Lütfen bir kart seçin'); return; }
+    if (showNewForm) {
+      // Validate form first, then save & proceed
+      const e = validateNew();
+      if (Object.keys(e).length) { setFormErrors(e); return; }
+    }
+    setSubmitting(true);
+    const chosen = cards.find(c => c.id === selectedCard);
+    dispatch(setPayment({
+      card_no:      chosen ? String(chosen.card_no).slice(-4) : newCard.card_no.slice(-4),
+      name_on_card: chosen?.name_on_card ?? newCard.name_on_card,
+      use3D,
+    }));
+    setTimeout(() => { setSubmitting(false); onComplete(); }, 600);
+  };
+
+  // ── Input / select CSS helpers ────────────────────────────────────────────────
+  const inputCls = (err) =>
+    `w-full border rounded-[5px] px-3 py-[10px] text-[14px] font-['Montserrat'] outline-none
+     transition-colors ${err ? 'border-[#E74040]' : 'border-[#E8E8E8] focus:border-[#FF6000]'}`;
+  const selCls = (err) =>
+    `w-full border rounded-[5px] px-3 py-[10px] text-[14px] font-['Montserrat'] bg-white
+     outline-none appearance-none transition-colors
+     ${err ? 'border-[#E74040]' : 'border-[#E8E8E8] focus:border-[#FF6000]'}`;
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header card */}
-      <div className="bg-white border border-[#E8E8E8] rounded-[5px] p-5">
-        <h2 className="font-bold text-[18px] text-[#252B42] m-0 mb-1 flex items-center gap-2">
-          <CreditCard size={18} color="#FF6000" /> Ödeme Seçenekleri
-        </h2>
-        <p className="font-normal text-[13px] text-[#737373] m-0">
-          <strong>Banka/Kredi Kartı</strong> veya <strong>Alışveriş Kredisi</strong> ile ödemenizi güvenle yapabilirsiniz.
-        </p>
-      </div>
 
-      {/* Card form */}
-      <div className="bg-white border border-[#E8E8E8] rounded-[5px] p-5">
-        <div className="flex items-center gap-2 mb-5">
-          <Lock size={15} color="#23856D" />
-          <span className="font-bold text-[13px] text-[#23856D]">256-bit SSL ile korumalı güvenli ödeme</span>
+      {/* ── Address summary header ───────────────────────────────────────── */}
+      {addressData && (
+        <div className="bg-white border border-[#E8E8E8] rounded-[5px] p-5
+                        flex flex-col md:flex-row md:items-start gap-4">
+          <div className="flex-1">
+            <h3 className="font-bold text-[16px] text-[#252B42] m-0 mb-1">Adres Bilgileri</h3>
+            <p className="font-normal text-[13px] text-[#737373] m-0">
+              {addressData.shippingAddr?.title}
+            </p>
+            <p className="font-normal text-[13px] text-[#737373] m-0">
+              {addressData.shippingAddr?.neighborhood}, {addressData.shippingAddr?.district}
+            </p>
+            <p className="font-normal text-[13px] text-[#737373] m-0">
+              {addressData.shippingAddr?.city}
+            </p>
+          </div>
+          <button onClick={onBack}
+            className="font-bold text-[13px] text-[#252B42] underline bg-transparent
+                       border-none cursor-pointer self-start">
+            Değiştir
+          </button>
+          <div className="hidden md:block h-full w-px bg-[#E8E8E8] mx-2" />
+          <div className="flex-1">
+            <h3 className="font-bold text-[16px] text-[#FF6000] m-0 mb-1">Ödeme Seçenekleri</h3>
+            <p className="font-normal text-[13px] text-[#737373] m-0">
+              <strong>Banka/Kredi Kartı</strong> veya <strong>Alışveriş Kredisi</strong> ile
+              ödemenizi güvenle yapabilirsiniz.
+            </p>
+          </div>
         </div>
+      )}
 
-        {/* Card number preview strip */}
-        <div className="bg-gradient-to-br from-[#252B42] to-[#23A6F0] rounded-[10px]
-                        p-5 mb-5 text-white relative overflow-hidden">
-          <div className="absolute top-3 right-4 opacity-20 text-[60px] font-bold">◈</div>
-          <p className="font-mono text-[18px] tracking-[4px] mb-2 m-0">
-            {card.cardNumber || '•••• •••• •••• ••••'}
-          </p>
-          <div className="flex justify-between items-end">
-            <div>
-              <p className="text-[10px] opacity-70 m-0 mb-[2px]">Kart Sahibi</p>
-              <p className="font-bold text-[13px] m-0 uppercase">
-                {card.cardName || 'AD SOYAD'}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] opacity-70 m-0 mb-[2px]">Son Kullanma</p>
-              <p className="font-bold text-[13px] m-0">
-                {card.expMonth || 'MM'}/{card.expYear ? card.expYear.slice(-2) : 'YY'}
-              </p>
-            </div>
+      {/* ── Kart ile Öde section ─────────────────────────────────────────── */}
+      <div className="bg-white border border-[#E8E8E8] rounded-[5px] p-5">
+
+        {/* Section header */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-[20px] h-[20px] rounded-full border-2 border-[#FF6000] flex-shrink-0
+                          flex items-center justify-center">
+            <div className="w-[10px] h-[10px] rounded-full bg-[#FF6000]" />
+          </div>
+          <div>
+            <p className="font-bold text-[15px] text-[#252B42] m-0">Kart ile Öde</p>
+            <p className="font-normal text-[12px] text-[#737373] m-0">
+              Kart ile ödemeyi seçtiniz. Banka veya Kredi Kartı kullanarak ödemenizi güvenle yapabilirsiniz.
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          {/* Card number */}
-          <F label="Kart Numarası *" field="cardNumber" err={errors.cardNumber}>
-            <input
-              type="text" inputMode="numeric"
-              value={card.cardNumber}
-              onChange={e => set('cardNumber', formatCardNum(e.target.value))}
-              placeholder="0000 0000 0000 0000"
-              maxLength={19}
-              className={inputCls(errors.cardNumber)}
-            />
-          </F>
+        <div className="flex flex-col lg:flex-row gap-6">
 
-          {/* Name on card */}
-          <F label="Kart Üzerindeki İsim *" field="cardName" err={errors.cardName}>
-            <input
-              type="text" value={card.cardName}
-              onChange={e => set('cardName', e.target.value.toUpperCase())}
-              placeholder="AD SOYAD"
-              className={inputCls(errors.cardName)}
-            />
-          </F>
+          {/* LEFT: Kart Bilgileri */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-[16px] text-[#252B42] m-0">Kart Bilgileri</h3>
+              {!showNewForm && cards.length > 0 && (
+                <button onClick={() => setShowNewForm(true)}
+                  className="font-bold text-[13px] text-[#252B42] underline bg-transparent
+                             border-none cursor-pointer hover:text-[#FF6000] transition-colors">
+                  Başka bir Kart ile Ödeme Yap
+                </button>
+              )}
+              {showNewForm && cards.length > 0 && (
+                <button onClick={() => { setShowNewForm(false); setFormErrors({}); }}
+                  className="font-bold text-[13px] text-[#252B42] underline bg-transparent
+                             border-none cursor-pointer hover:text-[#FF6000] transition-colors">
+                  Kayıtlı kartımla ödeme yap
+                </button>
+              )}
+            </div>
 
-          {/* Expiry + CVV */}
-          <div className="grid grid-cols-3 gap-3">
-            <F label="Ay *" field="expMonth" err={errors.expMonth}>
-              <select value={card.expMonth} onChange={e => set('expMonth', e.target.value)}
-                className={selCls(errors.expMonth)}>
-                <option value="">MM</option>
-                {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </F>
-            <F label="Yıl *" field="expYear" err={errors.expYear}>
-              <select value={card.expYear} onChange={e => set('expYear', e.target.value)}
-                className={selCls(errors.expYear)}>
-                <option value="">YYYY</option>
-                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </F>
-            <F label="CVV *" field="cvv" err={errors.cvv}>
-              <input
-                type="text" inputMode="numeric"
-                value={card.cvv}
-                onChange={e => set('cvv', e.target.value.replace(/\D/g,'').slice(0,4))}
-                placeholder="•••"
-                maxLength={4}
-                className={inputCls(errors.cvv)}
-              />
-            </F>
+            {/* Loading */}
+            {cardsLoading && (
+              <div className="flex justify-center py-6">
+                <Loader2 size={28} className="animate-spin text-[#FF6000]" />
+              </div>
+            )}
+
+            {/* ── Saved card tiles ────────────────────────────────────────── */}
+            {!cardsLoading && !showNewForm && cards.length > 0 && (
+              <div className="flex flex-col gap-4">
+                {/* Group cards with radio label + tile */}
+                {cards.map(c => (
+                  <div key={c.id}>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="savedCard"
+                          checked={selectedCard === c.id}
+                          onChange={() => setSelectedCard(c.id)}
+                          className="accent-[#FF6000] w-[16px] h-[16px]" />
+                        <span className={`font-bold text-[13px] transition-colors
+                          ${selectedCard === c.id ? 'text-[#FF6000]' : 'text-[#737373]'}`}>
+                          {c.name_on_card} kartım
+                        </span>
+                      </label>
+                      <button onClick={() => handleDeleteCard(c.id)}
+                        className="p-1 bg-transparent border-none cursor-pointer
+                                   text-[#BDBDBD] hover:text-[#E74040] transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <SavedCardTile
+                      card={c}
+                      selected={selectedCard === c.id}
+                      onSelect={() => setSelectedCard(c.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* ── New card form ────────────────────────────────────────────── */}
+            {!cardsLoading && (showNewForm || cards.length === 0) && (
+              <div className="flex flex-col gap-4">
+                {/* Card number */}
+                <div>
+                  <label className="font-normal text-[14px] text-[#252B42] block mb-2">
+                    Kart Numarası
+                  </label>
+                  <input
+                    type="text" inputMode="numeric"
+                    value={newCard.card_no}
+                    onChange={e => setF('card_no', formatCardNum(e.target.value))}
+                    placeholder=""
+                    maxLength={19}
+                    className={inputCls(formErrors.card_no)}
+                  />
+                  {formErrors.card_no && (
+                    <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.card_no}</p>
+                  )}
+                </div>
+
+                {/* Name on card */}
+                <div>
+                  <label className="font-normal text-[14px] text-[#252B42] block mb-2">
+                    Kart Üzerindeki İsim
+                  </label>
+                  <input
+                    type="text"
+                    value={newCard.name_on_card}
+                    onChange={e => setF('name_on_card', e.target.value)}
+                    placeholder="Ad Soyad"
+                    className={inputCls(formErrors.name_on_card)}
+                  />
+                  {formErrors.name_on_card && (
+                    <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.name_on_card}</p>
+                  )}
+                </div>
+
+                {/* Expiry + CVV */}
+                <div className="flex items-start gap-4">
+                  <div className="flex-1">
+                    <label className="font-normal text-[14px] text-[#252B42] block mb-2">
+                      Son Kullanma Tarihi
+                    </label>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <select value={newCard.expire_month}
+                          onChange={e => setF('expire_month', e.target.value)}
+                          className={selCls(formErrors.expire_month)}>
+                          <option value="">Ay</option>
+                          {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+                        </select>
+                        {formErrors.expire_month && (
+                          <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.expire_month}</p>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <select value={newCard.expire_year}
+                          onChange={e => setF('expire_year', e.target.value)}
+                          className={selCls(formErrors.expire_year)}>
+                          <option value="">Yıl</option>
+                          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                        {formErrors.expire_year && (
+                          <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.expire_year}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CVV */}
+                  <div className="w-[140px]">
+                    <label className="font-normal text-[14px] text-[#252B42] block mb-2">
+                      CVV
+                      <span className="ml-1 text-[#FF6000] font-bold cursor-help" title="Kartınızın arkasındaki 3-4 haneli güvenlik kodu">ⓘ</span>
+                    </label>
+                    <input
+                      type="text" inputMode="numeric"
+                      value={newCard.cvv}
+                      onChange={e => setF('cvv', e.target.value.replace(/\D/g,'').slice(0,4))}
+                      maxLength={4}
+                      className={inputCls(formErrors.cvv)}
+                    />
+                    {formErrors.cvv && (
+                      <p className="text-[11px] text-[#E74040] mt-1 m-0">{formErrors.cvv}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Save card button */}
+                {showNewForm && cards.length > 0 && (
+                  <button onClick={handleSaveCard} disabled={formLoading}
+                    className="self-start px-5 py-2 bg-[#FF6000] text-white rounded-[5px]
+                               font-bold text-[13px] border-none cursor-pointer
+                               hover:bg-[#e05500] transition-colors flex items-center gap-2
+                               disabled:opacity-60 disabled:cursor-not-allowed">
+                    {formLoading && <Loader2 size={13} className="animate-spin" />}
+                    Kartı Kaydet
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* 3D Secure */}
+            <label className="flex items-center gap-2 cursor-pointer select-none mt-5">
+              <input type="checkbox" checked={use3D} onChange={e => setUse3D(e.target.checked)}
+                className="w-[18px] h-[18px] accent-[#FF6000]" />
+              <Lock size={14} color="#252B42" className="flex-shrink-0" />
+              <span className="font-bold text-[13px] text-[#252B42]">3D Secure</span>
+              <span className="font-normal text-[13px] text-[#252B42]">ile ödemek istiyorum.</span>
+            </label>
           </div>
 
-          {/* Save card */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={card.saveCard}
-              onChange={e => set('saveCard', e.target.checked)}
-              className="accent-[#FF6000] w-[16px] h-[16px]" />
-            <span className="font-normal text-[13px] text-[#252B42]">Bu kartı kaydet</span>
-          </label>
+          {/* RIGHT: Taksit Seçenekleri */}
+          <div className="lg:w-[340px] flex-shrink-0">
+            <h3 className="font-bold text-[16px] text-[#252B42] m-0 mb-1">Taksit Seçenekleri</h3>
+            <p className="font-normal text-[13px] text-[#737373] m-0 mb-4">
+              Kartınıza uygun taksit seçeneğini seçiniz
+            </p>
+            <table className="w-full border border-[#E8E8E8] rounded-[5px] overflow-hidden">
+              <thead>
+                <tr className="bg-[#FAFAFA] border-b border-[#E8E8E8]">
+                  <th className="font-bold text-[13px] text-[#252B42] text-left px-4 py-3">
+                    Taksit Sayısı
+                  </th>
+                  <th className="font-bold text-[13px] text-[#252B42] text-right px-4 py-3">
+                    Aylık Ödeme
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Single payment — always available */}
+                <tr className="border-b border-[#F5F5F5]">
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-[16px] h-[16px] rounded-full border-2 border-[#FF6000]
+                                      flex items-center justify-center flex-shrink-0">
+                        <div className="w-[8px] h-[8px] rounded-full bg-[#FF6000]" />
+                      </div>
+                      <span className="font-bold text-[13px] text-[#FF6000]">Tek Çekim</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-right font-bold text-[13px] text-[#FF6000]">
+                    {grandTotal.toFixed(2)} TL
+                  </td>
+                </tr>
+                {/* Placeholder installment rows */}
+                {[2, 3, 6].map(n => (
+                  <tr key={n} className="border-b border-[#F5F5F5] opacity-40">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-[16px] h-[16px] rounded-full border-2 border-[#BDBDBD]
+                                        flex-shrink-0" />
+                        <span className="font-normal text-[13px] text-[#737373]">{n} Taksit</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-normal text-[13px] text-[#737373]">
+                      {(grandTotal / n).toFixed(2)} TL
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      {/* Back + mobile submit */}
+      {/* ── Mobile: Back + Submit ────────────────────────────────────────── */}
       <div className="flex gap-3 lg:hidden">
         <button onClick={onBack}
           className="flex-1 py-[13px] border border-[#BDBDBD] rounded-[5px] font-bold text-[14px]
@@ -599,7 +890,7 @@ function PaymentStep({ onBack, onComplete }) {
                      border-none cursor-pointer hover:bg-[#e05500] transition-colors
                      flex items-center justify-center gap-2 disabled:opacity-60">
           {submitting && <Loader2 size={14} className="animate-spin" />}
-          Siparişi Tamamla
+          Ödeme Yap
         </button>
       </div>
     </div>
@@ -671,6 +962,7 @@ export default function CreateOrderPage() {
               <PaymentStep
                 onBack={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 onComplete={handleComplete}
+                addressData={addressData}
               />
             )}
           </div>
@@ -682,7 +974,7 @@ export default function CreateOrderPage() {
             onConfirm={step === 1
               ? () => toast.info('Önce teslimat adresinizi seçin')
               : handleComplete}
-            btnLabel={step === 1 ? 'Kaydet ve Devam Et' : 'Siparişi Tamamla'}
+            btnLabel={step === 1 ? 'Kaydet ve Devam Et' : 'Ödeme Yap'}
           />
         </div>
       </div>
